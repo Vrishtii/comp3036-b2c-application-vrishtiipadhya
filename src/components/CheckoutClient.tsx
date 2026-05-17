@@ -11,6 +11,13 @@ interface Props {
   pickupTime: string;
 }
 
+export interface CustomerDetails {
+  name: string;
+  email: string;
+  phone: string;
+  notes: string;
+}
+
 function StepIndicator({ current }: { current: number }) {
   return (
     <div className="flex items-center gap-3 font-inter text-xs tracking-widest uppercase mb-16 flex-wrap">
@@ -91,21 +98,104 @@ function OrderSummaryStep({
 }
 
 function DetailsStep({
+  details,
+  onChange,
   onBack,
   onNext,
 }: {
+  details: CustomerDetails;
+  onChange: (d: CustomerDetails) => void;
   onBack: () => void;
   onNext: () => void;
 }) {
+  const [errors, setErrors] = useState<Partial<CustomerDetails>>({});
+
+  function validate() {
+    const e: Partial<CustomerDetails> = {};
+    if (!details.name.trim()) e.name = "name is required";
+    if (!details.email.trim()) e.email = "email is required";
+    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(details.email))
+      e.email = "enter a valid email";
+    if (!details.phone.trim()) e.phone = "phone number is required";
+    return e;
+  }
+
+  function handleNext() {
+    const e = validate();
+    if (Object.keys(e).length > 0) {
+      setErrors(e);
+      return;
+    }
+    onNext();
+  }
+
+  function field(
+    id: keyof CustomerDetails,
+    label: string,
+    type = "text",
+    placeholder = ""
+  ) {
+    return (
+      <div>
+        <label
+          htmlFor={id}
+          className="block font-inter text-xs tracking-widest uppercase text-ink/50 mb-2"
+        >
+          {label}
+        </label>
+        <input
+          id={id}
+          type={type}
+          value={details[id]}
+          onChange={(e) => {
+            onChange({ ...details, [id]: e.target.value });
+            if (errors[id]) setErrors((prev) => ({ ...prev, [id]: undefined }));
+          }}
+          placeholder={placeholder}
+          className="w-full bg-transparent border border-ink/20 px-4 py-3 font-inter text-sm text-ink placeholder-ink/30 focus:outline-none focus:border-burgundy transition-colors"
+        />
+        {errors[id] && (
+          <p className="font-inter text-xs text-burgundy mt-1">{errors[id]}</p>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div>
       <h2 className="font-playfair text-3xl text-ink mb-8">your details.</h2>
-      <p className="font-inter text-sm text-ink/40 mb-8">coming in next step.</p>
-      <div className="flex gap-4">
-        <button onClick={onBack} className="font-inter text-xs tracking-widest uppercase text-ink/40 hover:text-burgundy transition-colors">
+      <div className="flex flex-col gap-6 mb-10">
+        {field("name", "full name", "text", "Jane Smith")}
+        {field("email", "email", "email", "jane@example.com")}
+        {field("phone", "phone number", "tel", "+61 400 000 000")}
+        <div>
+          <label
+            htmlFor="notes"
+            className="block font-inter text-xs tracking-widest uppercase text-ink/50 mb-2"
+          >
+            additional notes <span className="normal-case">(optional)</span>
+          </label>
+          <textarea
+            id="notes"
+            value={details.notes}
+            onChange={(e) => onChange({ ...details, notes: e.target.value })}
+            placeholder="any other details for your order"
+            rows={3}
+            className="w-full bg-transparent border border-ink/20 px-4 py-3 font-inter text-sm text-ink placeholder-ink/30 focus:outline-none focus:border-burgundy transition-colors resize-none"
+          />
+        </div>
+      </div>
+      <div className="flex items-center gap-6">
+        <button
+          onClick={onBack}
+          className="font-inter text-xs tracking-widest uppercase text-ink/40 hover:text-burgundy transition-colors"
+        >
           ← back
         </button>
-        <button onClick={onNext} className="bg-burgundy text-cream px-10 py-4 font-inter text-xs tracking-widest uppercase hover:bg-ink transition-colors">
+        <button
+          onClick={handleNext}
+          className="bg-burgundy text-cream px-10 py-4 font-inter text-xs tracking-widest uppercase hover:bg-ink transition-colors"
+        >
           continue →
         </button>
       </div>
@@ -179,6 +269,12 @@ export default function CheckoutClient({ pickupDate, pickupTime }: Props) {
   const { items, subtotal } = useCart();
   const router = useRouter();
   const [step, setStep] = useState(1);
+  const [customerDetails, setCustomerDetails] = useState<CustomerDetails>({
+    name: "",
+    email: "",
+    phone: "",
+    notes: "",
+  });
 
   useEffect(() => {
     if (items.length === 0) router.replace("/cart");
@@ -203,7 +299,12 @@ export default function CheckoutClient({ pickupDate, pickupTime }: Props) {
             />
           )}
           {step === 2 && (
-            <DetailsStep onBack={() => setStep(1)} onNext={() => setStep(3)} />
+            <DetailsStep
+              details={customerDetails}
+              onChange={setCustomerDetails}
+              onBack={() => setStep(1)}
+              onNext={() => setStep(3)}
+            />
           )}
           {step === 3 && <PaymentStep onBack={() => setStep(2)} />}
         </div>
