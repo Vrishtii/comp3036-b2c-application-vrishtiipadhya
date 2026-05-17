@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useCart, type CartItem } from "@/context/CartContext";
+import { useOrder, generateOrderNumber, type Order } from "@/context/OrderContext";
 
 const STEPS = ["order summary", "your details", "payment"] as const;
 
@@ -16,6 +17,12 @@ export interface CustomerDetails {
   email: string;
   phone: string;
   notes: string;
+}
+
+interface PaymentDetails {
+  cardNumber: string;
+  expiry: string;
+  cvv: string;
 }
 
 function StepIndicator({ current }: { current: number }) {
@@ -203,12 +210,65 @@ function DetailsStep({
   );
 }
 
-function PaymentStep({ onBack }: { onBack: () => void }) {
+function PaymentStep({
+  details,
+  errors,
+  onChange,
+  onBack,
+}: {
+  details: PaymentDetails;
+  errors: Partial<PaymentDetails>;
+  onChange: (d: PaymentDetails) => void;
+  onBack: () => void;
+}) {
+  function paymentField(
+    id: keyof PaymentDetails,
+    label: string,
+    placeholder: string,
+    maxLength: number
+  ) {
+    return (
+      <div>
+        <label
+          htmlFor={id}
+          className="block font-inter text-xs tracking-widest uppercase text-ink/50 mb-2"
+        >
+          {label}
+        </label>
+        <input
+          id={id}
+          type="text"
+          inputMode="numeric"
+          value={details[id]}
+          onChange={(e) => onChange({ ...details, [id]: e.target.value })}
+          placeholder={placeholder}
+          maxLength={maxLength}
+          className="w-full bg-transparent border border-ink/20 px-4 py-3 font-inter text-sm text-ink placeholder-ink/30 focus:outline-none focus:border-burgundy transition-colors tracking-widest"
+        />
+        {errors[id] && (
+          <p className="font-inter text-xs text-burgundy mt-1">{errors[id]}</p>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div>
       <h2 className="font-playfair text-3xl text-ink mb-8">payment.</h2>
-      <p className="font-inter text-sm text-ink/40 mb-8">coming in next step.</p>
-      <button onClick={onBack} className="font-inter text-xs tracking-widest uppercase text-ink/40 hover:text-burgundy transition-colors">
+      <div className="flex flex-col gap-6 mb-6">
+        {paymentField("cardNumber", "card number", "0000 0000 0000 0000", 19)}
+        <div className="grid grid-cols-2 gap-6">
+          {paymentField("expiry", "expiry (mm/yy)", "MM/YY", 5)}
+          {paymentField("cvv", "cvv", "000", 3)}
+        </div>
+      </div>
+      <p className="font-inter text-xs text-ink/35 mb-10">
+        this is a demo payment. no real charges will be made.
+      </p>
+      <button
+        onClick={onBack}
+        className="font-inter text-xs tracking-widest uppercase text-ink/40 hover:text-burgundy transition-colors"
+      >
         ← back
       </button>
     </div>
@@ -218,9 +278,13 @@ function PaymentStep({ onBack }: { onBack: () => void }) {
 function OrderSummaryPanel({
   items,
   subtotal,
+  isOnPaymentStep,
+  onPlaceOrder,
 }: {
   items: CartItem[];
   subtotal: number;
+  isOnPaymentStep: boolean;
+  onPlaceOrder: () => void;
 }) {
   return (
     <div className="lg:sticky lg:top-32 self-start border border-ink/10 p-8">
@@ -253,20 +317,28 @@ function OrderSummaryPanel({
       </div>
 
       <button
-        disabled
-        className="w-full py-4 font-inter text-xs tracking-widest uppercase bg-ink/10 text-ink/30 cursor-not-allowed"
+        onClick={isOnPaymentStep ? onPlaceOrder : undefined}
+        disabled={!isOnPaymentStep}
+        className={`w-full py-4 font-inter text-xs tracking-widest uppercase transition-colors ${
+          isOnPaymentStep
+            ? "bg-burgundy text-cream hover:bg-ink"
+            : "bg-ink/10 text-ink/30 cursor-not-allowed"
+        }`}
       >
         place order
       </button>
-      <p className="font-inter text-xs text-ink/30 text-center mt-3">
-        complete all steps to place your order
-      </p>
+      {!isOnPaymentStep && (
+        <p className="font-inter text-xs text-ink/30 text-center mt-3">
+          complete all steps to place your order
+        </p>
+      )}
     </div>
   );
 }
 
 export default function CheckoutClient({ pickupDate, pickupTime }: Props) {
-  const { items, subtotal } = useCart();
+  const { items, subtotal, clearCart } = useCart();
+  const { saveOrder } = useOrder();
   const router = useRouter();
   const [step, setStep] = useState(1);
   const [customerDetails, setCustomerDetails] = useState<CustomerDetails>({
@@ -275,6 +347,43 @@ export default function CheckoutClient({ pickupDate, pickupTime }: Props) {
     phone: "",
     notes: "",
   });
+  const [paymentDetails, setPaymentDetails] = useState<PaymentDetails>({
+    cardNumber: "",
+    expiry: "",
+    cvv: "",
+  });
+  const [paymentErrors, setPaymentErrors] = useState<Partial<PaymentDetails>>({});
+
+  function handlePlaceOrder() {
+    const errors: Partial<PaymentDetails> = {};
+    if (paymentDetails.cardNumber.replace(/\s/g, "").length !== 16)
+      errors.cardNumber = "enter a valid 16-digit card number";
+    if (!/^\d{2}\/\d{2}$/.test(paymentDetails.expiry))
+      errors.expiry = "enter expiry as MM/YY";
+    if (paymentDetails.cvv.length !== 3)
+      errors.cvv = "enter a valid 3-digit CVV";
+
+    if (Object.keys(errors).length > 0) {
+      setPaymentErrors(errors);
+      return;
+    }
+
+    const order: Order = {
+      orderNumber: generateOrderNumber(),
+      items,
+      subtotal,
+      pickupDate,
+      pickupTime,
+      customerName: customerDetails.name,
+      customerEmail: customerDetails.email,
+      customerPhone: customerDetails.phone,
+      additionalNotes: customerDetails.notes,
+      placedAt: new Date().toISOString(),
+    };
+    saveOrder(order);
+    clearCart();
+    router.push("/order-confirmation");
+  }
 
   useEffect(() => {
     if (items.length === 0) router.replace("/cart");
@@ -306,10 +415,22 @@ export default function CheckoutClient({ pickupDate, pickupTime }: Props) {
               onNext={() => setStep(3)}
             />
           )}
-          {step === 3 && <PaymentStep onBack={() => setStep(2)} />}
+          {step === 3 && (
+            <PaymentStep
+              details={paymentDetails}
+              errors={paymentErrors}
+              onChange={setPaymentDetails}
+              onBack={() => setStep(2)}
+            />
+          )}
         </div>
 
-        <OrderSummaryPanel items={items} subtotal={subtotal} />
+        <OrderSummaryPanel
+          items={items}
+          subtotal={subtotal}
+          isOnPaymentStep={step === 3}
+          onPlaceOrder={handlePlaceOrder}
+        />
       </div>
     </main>
   );
