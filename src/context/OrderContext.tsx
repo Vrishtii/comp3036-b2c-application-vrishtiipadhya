@@ -31,6 +31,7 @@ interface OrderContextValue {
   order: Order | null;
   saveOrder: (order: Order) => void;
   clearOrder: () => void;
+  updateOrderStatus: (orderNumber: string, status: OrderStatus) => void;
 }
 
 const OrderContext = createContext<OrderContextValue | null>(null);
@@ -62,6 +63,16 @@ export function OrderProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem(STORAGE_KEY);
   }
 
+  function updateOrderStatus(orderNumber: string, status: OrderStatus) {
+    setOrders((prev) => {
+      const updated = prev.map((o) =>
+        o.orderNumber === orderNumber ? { ...o, status } : o
+      );
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+      return updated;
+    });
+  }
+
   return (
     <OrderContext.Provider
       value={{
@@ -69,6 +80,7 @@ export function OrderProvider({ children }: { children: ReactNode }) {
         order: orders.length > 0 ? orders[orders.length - 1] : null,
         saveOrder,
         clearOrder,
+        updateOrderStatus,
       }}
     >
       {children}
