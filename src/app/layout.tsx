@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Playfair_Display, Inter } from "next/font/google";
+import { AuthProvider } from "@/context/AuthContext";
 import { CartProvider } from "@/context/CartContext";
 import { OrderProvider } from "@/context/OrderContext";
 import "./globals.css";
@@ -27,9 +28,11 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${playfair.variable} ${inter.variable}`}>
       <body className="font-inter">
-        <OrderProvider>
-          <CartProvider>{children}</CartProvider>
-        </OrderProvider>
+        <AuthProvider>
+          <OrderProvider>
+            <CartProvider>{children}</CartProvider>
+          </OrderProvider>
+        </AuthProvider>
       </body>
     </html>
   );
