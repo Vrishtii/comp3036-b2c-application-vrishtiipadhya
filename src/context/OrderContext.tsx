@@ -9,8 +9,11 @@ import {
 } from "react";
 import type { CartItem } from "@/context/CartContext";
 
+export type OrderStatus = "pending" | "confirmed" | "ready" | "completed";
+
 export interface Order {
   orderNumber: string;
+  userId: string;
   items: CartItem[];
   subtotal: number;
   pickupDate: string;
@@ -20,9 +23,11 @@ export interface Order {
   customerPhone: string;
   additionalNotes: string;
   placedAt: string;
+  status: OrderStatus;
 }
 
 interface OrderContextValue {
+  orders: Order[];
   order: Order | null;
   saveOrder: (order: Order) => void;
   clearOrder: () => void;
@@ -30,34 +35,42 @@ interface OrderContextValue {
 
 const OrderContext = createContext<OrderContextValue | null>(null);
 
-const STORAGE_KEY = "crave_order";
+const STORAGE_KEY = "crave_orders";
 
 export function OrderProvider({ children }: { children: ReactNode }) {
-  const [order, setOrder] = useState<Order | null>(null);
+  const [orders, setOrders] = useState<Order[]>([]);
 
   useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY);
-    if (stored) {
-      try {
-        setOrder(JSON.parse(stored));
-      } catch {
-        localStorage.removeItem(STORAGE_KEY);
-      }
+    try {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) setOrders(JSON.parse(stored));
+    } catch {
+      localStorage.removeItem(STORAGE_KEY);
     }
   }, []);
 
   function saveOrder(newOrder: Order) {
-    setOrder(newOrder);
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(newOrder));
+    setOrders((prev) => {
+      const updated = [...prev, newOrder];
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+      return updated;
+    });
   }
 
   function clearOrder() {
-    setOrder(null);
+    setOrders([]);
     localStorage.removeItem(STORAGE_KEY);
   }
 
   return (
-    <OrderContext.Provider value={{ order, saveOrder, clearOrder }}>
+    <OrderContext.Provider
+      value={{
+        orders,
+        order: orders.length > 0 ? orders[orders.length - 1] : null,
+        saveOrder,
+        clearOrder,
+      }}
+    >
       {children}
     </OrderContext.Provider>
   );
