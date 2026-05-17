@@ -3,6 +3,7 @@
 import { useState } from "react";
 import Link from "next/link";
 import type { Product } from "@/data/products";
+import { useCart } from "@/context/CartContext";
 
 interface Props {
   product: Product;
@@ -13,8 +14,17 @@ export default function ProductDetail({ product, related }: Props) {
   const [quantity, setQuantity] = useState(1);
   const [notes, setNotes] = useState("");
   const [added, setAdded] = useState(false);
+  const { addItem } = useCart();
 
   function handleAddToCart() {
+    addItem({
+      productId: product.id,
+      name: product.name,
+      price: product.price,
+      priceValue: parseFloat(product.price.replace("$", "")),
+      quantity,
+      customNotes: notes,
+    });
     setAdded(true);
     setTimeout(() => setAdded(false), 3000);
   }
