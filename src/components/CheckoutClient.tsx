@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useCart, type CartItem } from "@/context/CartContext";
 import { useOrder, generateOrderNumber, type Order } from "@/context/OrderContext";
+import { useAuth } from "@/context/AuthContext";
 
 const STEPS = ["order summary", "your details", "payment"] as const;
 
@@ -339,6 +340,7 @@ function OrderSummaryPanel({
 export default function CheckoutClient({ pickupDate, pickupTime }: Props) {
   const { items, subtotal, clearCart } = useCart();
   const { saveOrder } = useOrder();
+  const { isLoggedIn } = useAuth();
   const router = useRouter();
   const [step, setStep] = useState(1);
   const [customerDetails, setCustomerDetails] = useState<CustomerDetails>({
@@ -386,8 +388,9 @@ export default function CheckoutClient({ pickupDate, pickupTime }: Props) {
   }
 
   useEffect(() => {
-    if (items.length === 0) router.replace("/cart");
-  }, [items, router]);
+    if (!isLoggedIn) router.replace("/login?redirect=/checkout");
+    else if (items.length === 0) router.replace("/cart");
+  }, [isLoggedIn, items, router]);
 
   if (items.length === 0) return null;
 
