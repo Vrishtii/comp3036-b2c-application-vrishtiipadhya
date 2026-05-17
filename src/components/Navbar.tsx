@@ -18,7 +18,7 @@ export default function Navbar() {
           Menu
         </Link>
         {isAdmin && (
-          <Link href="/dashboard" className="hover:text-burgundy transition-colors">
+          <Link href="/admin" className="hover:text-burgundy transition-colors">
             Dashboard
           </Link>
         )}
