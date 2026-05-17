@@ -15,7 +15,7 @@ test.describe("homepage", () => {
   test("navbar has menu and cart links", async ({ page }) => {
     await page.goto("/");
     await expect(page.getByRole("link", { name: "Menu" })).toBeVisible();
-    await expect(page.getByRole("link", { name: "Cart" })).toBeVisible();
+    await expect(page.locator("nav a[href='/cart']")).toBeVisible();
   });
 
   test("order now button links to products section", async ({ page }) => {

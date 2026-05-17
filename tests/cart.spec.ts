@@ -8,13 +8,13 @@ test.describe("cart page", () => {
 
   test("shows empty state when no items in cart", async ({ page }) => {
     await page.goto("/cart");
-    await expect(page.getByText("your cart is empty.")).toBeVisible();
+    await expect(page.getByText("nothing here yet.")).toBeVisible();
   });
 
   test("adding a product from detail page shows it in cart", async ({ page }) => {
     await page.goto("/menu/brownie-1");
     await page.getByRole("button", { name: /add to cart/i }).click();
     await page.goto("/cart");
-    await expect(page.getByText("Dark Chocolate Brownie")).toBeVisible();
+    await expect(page.getByText("Classic Fudge Brownie")).toBeVisible();
   });
 });

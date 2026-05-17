@@ -8,25 +8,25 @@ test.describe("login page", () => {
   test("shows login form fields", async ({ page }) => {
     await expect(page.getByLabel(/email/i)).toBeVisible();
     await expect(page.getByLabel(/password/i)).toBeVisible();
-    await expect(page.getByRole("button", { name: /log in/i })).toBeVisible();
+    await expect(page.getByRole("button", { name: /sign in/i })).toBeVisible();
   });
 
   test("shows error on empty submit", async ({ page }) => {
-    await page.getByRole("button", { name: /log in/i }).click();
-    await expect(page.getByText(/email.*required|required|fill in/i)).toBeVisible();
+    await page.getByRole("button", { name: /sign in/i }).click();
+    await expect(page.getByText("please fill in all fields")).toBeVisible();
   });
 
   test("shows error on wrong credentials", async ({ page }) => {
     await page.getByLabel(/email/i).fill("wrong@example.com");
     await page.getByLabel(/password/i).fill("wrongpassword");
-    await page.getByRole("button", { name: /log in/i }).click();
-    await expect(page.getByText(/invalid|incorrect|not found/i)).toBeVisible();
+    await page.getByRole("button", { name: /sign in/i }).click();
+    await expect(page.getByText("invalid email or password")).toBeVisible();
   });
 
   test("successful login with admin credentials redirects", async ({ page }) => {
     await page.getByLabel(/email/i).fill("admin@crave.com");
     await page.getByLabel(/password/i).fill("admin123");
-    await page.getByRole("button", { name: /log in/i }).click();
+    await page.getByRole("button", { name: /sign in/i }).click();
     await expect(page).not.toHaveURL("/login");
   });
 

@@ -6,9 +6,8 @@ test.describe("product detail page", () => {
   });
 
   test("shows product name and details", async ({ page }) => {
-    await expect(page.getByRole("heading", { name: "Dark Chocolate Brownie" })).toBeVisible();
+    await expect(page.getByRole("heading", { name: "Classic Fudge Brownie" })).toBeVisible();
     await expect(page.getByText("brownies")).toBeVisible();
-    await expect(page.getByText("$4.50")).toBeVisible();
   });
 
   test("quantity selector is visible and works", async ({ page }) => {

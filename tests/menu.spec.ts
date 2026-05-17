@@ -7,7 +7,7 @@ test.describe("menu page", () => {
 
   test("loads and shows products", async ({ page }) => {
     await expect(page.getByText("our menu.")).toBeVisible();
-    await expect(page.getByText("Dark Chocolate Brownie")).toBeVisible();
+    await expect(page.getByText("Classic Fudge Brownie")).toBeVisible();
     await expect(page.getByText("Brown Butter Choc Chip")).toBeVisible();
     await expect(page.getByText("Lemon Glazed Loaf")).toBeVisible();
   });
@@ -21,7 +21,7 @@ test.describe("menu page", () => {
 
   test("clicking brownies filter hides other categories", async ({ page }) => {
     await page.getByRole("button", { name: "brownies" }).click();
-    await expect(page.getByText("Dark Chocolate Brownie")).toBeVisible();
+    await expect(page.getByText("Classic Fudge Brownie")).toBeVisible();
     await expect(page.getByText("Salted Caramel Brownie")).toBeVisible();
     await expect(page.getByText("Brown Butter Choc Chip")).not.toBeVisible();
     await expect(page.getByText("Lemon Glazed Loaf")).not.toBeVisible();
@@ -29,7 +29,7 @@ test.describe("menu page", () => {
 
   test("search filters products by name", async ({ page }) => {
     await page.getByPlaceholder("search products...").fill("brownie");
-    await expect(page.getByText("Dark Chocolate Brownie")).toBeVisible();
+    await expect(page.getByText("Classic Fudge Brownie")).toBeVisible();
     await expect(page.getByText("Lemon Glazed Loaf")).not.toBeVisible();
   });
 
