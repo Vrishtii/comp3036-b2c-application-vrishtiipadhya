@@ -340,7 +340,7 @@ function OrderSummaryPanel({
 export default function CheckoutClient({ pickupDate, pickupTime }: Props) {
   const { items, subtotal, clearCart } = useCart();
   const { saveOrder } = useOrder();
-  const { isLoggedIn } = useAuth();
+  const { isLoggedIn, user } = useAuth();
   const router = useRouter();
   const [step, setStep] = useState(1);
   const [customerDetails, setCustomerDetails] = useState<CustomerDetails>({
@@ -372,6 +372,7 @@ export default function CheckoutClient({ pickupDate, pickupTime }: Props) {
 
     const order: Order = {
       orderNumber: generateOrderNumber(),
+      userId: user?.id ?? "guest",
       items,
       subtotal,
       pickupDate,
@@ -381,6 +382,7 @@ export default function CheckoutClient({ pickupDate, pickupTime }: Props) {
       customerPhone: customerDetails.phone,
       additionalNotes: customerDetails.notes,
       placedAt: new Date().toISOString(),
+      status: "pending",
     };
     saveOrder(order);
     clearCart();
