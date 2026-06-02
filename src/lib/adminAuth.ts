@@ -6,17 +6,23 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-type AdminAuthSuccess = {
+type AuthSuccess = {
   user: { id: string; email: string };
-  profile: { id: string; role: string };
   error?: never;
   status?: never;
 };
 
-type AdminAuthFailure = {
+type AuthFailure = {
   error: string;
   status: number;
   user?: never;
+};
+
+type AdminAuthSuccess = AuthSuccess & {
+  profile: { id: string; role: string };
+};
+
+type AdminAuthFailure = AuthFailure & {
   profile?: never;
 };
 
@@ -54,4 +60,26 @@ export async function requireAdmin(
   }
 
   return { user: { id: user.id, email: user.email! }, profile };
+}
+
+export async function requireAuth(
+  request: NextRequest
+): Promise<AuthSuccess | AuthFailure> {
+  const authHeader = request.headers.get("authorization");
+  if (!authHeader?.startsWith("Bearer ")) {
+    return { error: "unauthorized", status: 401 };
+  }
+
+  const token = authHeader.slice(7);
+
+  const {
+    data: { user },
+    error: authError,
+  } = await supabaseAdmin.auth.getUser(token);
+
+  if (authError || !user) {
+    return { error: "unauthorized", status: 401 };
+  }
+
+  return { user: { id: user.id, email: user.email! } };
 }
