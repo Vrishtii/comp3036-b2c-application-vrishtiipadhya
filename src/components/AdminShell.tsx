@@ -50,7 +50,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
           })}
         </nav>
         <button
-          onClick={logout}
+          onClick={() => void logout()}
           className="font-inter text-xs tracking-widest uppercase text-ink/30 hover:text-burgundy transition-colors text-left py-3 px-4"
         >
           logout

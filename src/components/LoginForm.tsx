@@ -2,18 +2,17 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 
 export default function LoginForm({ redirectTo }: { redirectTo: string }) {
   const { login } = useAuth();
-  const router = useRouter();
 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
 
@@ -22,11 +21,18 @@ export default function LoginForm({ redirectTo }: { redirectTo: string }) {
       return;
     }
 
-    const result = login(email, password);
-    if (result.success) {
-      router.push(redirectTo);
-    } else {
-      setError(result.error ?? "something went wrong");
+    setLoading(true);
+    try {
+      const result = await login(email, password);
+      if (result.success) {
+        window.location.href = redirectTo;
+      } else {
+        setError(result.error ?? "something went wrong");
+        setLoading(false);
+      }
+    } catch {
+      setError("something went wrong, please try again");
+      setLoading(false);
     }
   }
 
@@ -72,9 +78,10 @@ export default function LoginForm({ redirectTo }: { redirectTo: string }) {
 
         <button
           type="submit"
-          className="w-full bg-burgundy text-cream py-4 font-inter text-xs tracking-widest uppercase hover:bg-ink transition-colors mt-2"
+          disabled={loading}
+          className="w-full bg-burgundy text-cream py-4 font-inter text-xs tracking-widest uppercase hover:bg-ink transition-colors mt-2 disabled:opacity-50"
         >
-          sign in
+          {loading ? "signing in..." : "sign in"}
         </button>
       </form>
 

@@ -36,7 +36,7 @@ export default function Navbar() {
               hi, {user!.name.split(" ")[0].toLowerCase()}
             </span>
             <button
-              onClick={logout}
+              onClick={() => void logout()}
               className="hover:text-burgundy transition-colors"
             >
               Logout
