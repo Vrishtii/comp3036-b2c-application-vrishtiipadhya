@@ -27,28 +27,31 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
+const supabase = createClient();
+
 async function fetchProfile(userId: string): Promise<User | null> {
-  const supabase = createClient();
-  const { data, error } = await supabase
-    .from("profiles")
-    .select("id, full_name, email, role")
-    .eq("id", userId)
-    .single();
+  try {
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("id, full_name, email, role")
+      .eq("id", userId)
+      .single();
 
-  if (error || !data) return null;
+    if (error || !data) return null;
 
-  return {
-    id: data.id,
-    name: data.full_name,
-    email: data.email,
-    role: data.role as "customer" | "admin",
-  };
+    return {
+      id: data.id,
+      name: data.full_name || "",
+      email: data.email,
+      role: data.role as "customer" | "admin",
+    };
+  } catch {
+    return null;
+  }
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
-  const supabase = createClient();
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
@@ -56,17 +59,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const profile = await fetchProfile(session.user.id);
         setUser(profile);
       }
-      setLoading(false);
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, session) => {
-        if (session?.user) {
-          const profile = await fetchProfile(session.user.id);
-          setUser(profile);
-        } else {
-          setUser(null);
-        }
+      (_event, session) => {
+        if (!session?.user) setUser(null);
       }
     );
 
@@ -74,8 +71,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   async function login(email: string, password: string): Promise<{ success: boolean; error?: string }> {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) return { success: false, error: error.message };
+    if (data.user) {
+      const profile = await fetchProfile(data.user.id);
+      setUser(profile);
+    }
     return { success: true };
   }
 
@@ -85,19 +86,18 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   async function register(name: string, email: string, password: string): Promise<{ success: boolean; error?: string }> {
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
-      options: {
-        data: { full_name: name },
-      },
+      options: { data: { full_name: name } },
     });
-
     if (error) return { success: false, error: error.message };
+    if (data.user) {
+      const profile = await fetchProfile(data.user.id);
+      setUser(profile);
+    }
     return { success: true };
   }
-
-  if (loading) return null;
 
   return (
     <AuthContext.Provider

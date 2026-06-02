@@ -93,7 +93,7 @@ export default function OrdersClient() {
 
   useEffect(() => {
     if (!isLoggedIn) router.replace("/login?redirect=/orders");
-    else if (isAdmin) router.replace("/dashboard");
+    else if (isAdmin) router.replace("/admin");
   }, [isLoggedIn, isAdmin, router]);
 
   if (!isLoggedIn || isAdmin) return null;

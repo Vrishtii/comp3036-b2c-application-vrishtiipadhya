@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 
 interface Fields {
@@ -16,7 +15,6 @@ interface Errors extends Partial<Fields> {}
 
 export default function RegisterForm() {
   const { register } = useAuth();
-  const router = useRouter();
 
   const [fields, setFields] = useState<Fields>({
     name: "",
@@ -57,7 +55,7 @@ export default function RegisterForm() {
     }
     const result = await register(fields.name, fields.email, fields.password);
     if (result.success) {
-      router.push("/menu");
+      window.location.href = "/menu";
     } else {
       setServerError(result.error ?? "something went wrong");
     }
