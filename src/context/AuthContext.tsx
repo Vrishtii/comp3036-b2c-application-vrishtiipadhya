@@ -7,6 +7,7 @@ import {
   useEffect,
   type ReactNode,
 } from "react";
+import { createClient } from "@/lib/supabase/client";
 
 export interface User {
   id: string;
@@ -19,103 +20,84 @@ interface AuthContextValue {
   user: User | null;
   isLoggedIn: boolean;
   isAdmin: boolean;
-  login: (email: string, password: string) => { success: boolean; error?: string };
-  logout: () => void;
-  register: (name: string, email: string, password: string) => { success: boolean; error?: string };
+  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  logout: () => Promise<void>;
+  register: (name: string, email: string, password: string) => Promise<{ success: boolean; error?: string }>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-const AUTH_KEY = "crave_auth";
-const USERS_KEY = "crave_users";
+async function fetchProfile(userId: string): Promise<User | null> {
+  const supabase = createClient();
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("id, full_name, email, role")
+    .eq("id", userId)
+    .single();
 
-const ADMIN: User & { password: string } = {
-  id: "admin-1",
-  name: "Admin",
-  email: "admin@crave.com",
-  password: "admin123",
-  role: "admin",
-};
+  if (error || !data) return null;
 
-interface StoredUser extends User {
-  password: string;
-}
-
-function getStoredUsers(): StoredUser[] {
-  try {
-    return JSON.parse(localStorage.getItem(USERS_KEY) || "[]");
-  } catch {
-    return [];
-  }
+  return {
+    id: data.id,
+    name: data.full_name,
+    email: data.email,
+    role: data.role as "customer" | "admin",
+  };
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const supabase = createClient();
 
   useEffect(() => {
-    try {
-      const stored = localStorage.getItem(AUTH_KEY);
-      if (stored) setUser(JSON.parse(stored));
-    } catch {
-      localStorage.removeItem(AUTH_KEY);
-    }
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (session?.user) {
+        const profile = await fetchProfile(session.user.id);
+        setUser(profile);
+      }
+      setLoading(false);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (_event, session) => {
+        if (session?.user) {
+          const profile = await fetchProfile(session.user.id);
+          setUser(profile);
+        } else {
+          setUser(null);
+        }
+      }
+    );
+
+    return () => subscription.unsubscribe();
   }, []);
 
-  function login(email: string, password: string): { success: boolean; error?: string } {
-    // Check admin account
-    if (email === ADMIN.email && password === ADMIN.password) {
-      const { password: _, ...adminUser } = ADMIN;
-      void _;
-      setUser(adminUser);
-      localStorage.setItem(AUTH_KEY, JSON.stringify(adminUser));
-      return { success: true };
-    }
-
-    // Check registered users
-    const users = getStoredUsers();
-    const match = users.find((u) => u.email === email && u.password === password);
-    if (match) {
-      const { password: _, ...loggedInUser } = match;
-      void _;
-      setUser(loggedInUser);
-      localStorage.setItem(AUTH_KEY, JSON.stringify(loggedInUser));
-      return { success: true };
-    }
-
-    return { success: false, error: "invalid email or password" };
-  }
-
-  function logout() {
-    setUser(null);
-    localStorage.removeItem(AUTH_KEY);
-  }
-
-  function register(name: string, email: string, password: string): { success: boolean; error?: string } {
-    if (email === ADMIN.email) {
-      return { success: false, error: "an account with this email already exists" };
-    }
-
-    const users = getStoredUsers();
-    if (users.find((u) => u.email === email)) {
-      return { success: false, error: "an account with this email already exists" };
-    }
-
-    const newUser: StoredUser = {
-      id: `user-${Date.now()}`,
-      name,
-      email,
-      password,
-      role: "customer",
-    };
-
-    localStorage.setItem(USERS_KEY, JSON.stringify([...users, newUser]));
-
-    const { password: _, ...loggedInUser } = newUser;
-    void _;
-    setUser(loggedInUser);
-    localStorage.setItem(AUTH_KEY, JSON.stringify(loggedInUser));
+  async function login(email: string, password: string): Promise<{ success: boolean; error?: string }> {
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) return { success: false, error: error.message };
     return { success: true };
   }
+
+  async function logout(): Promise<void> {
+    await supabase.auth.signOut();
+    setUser(null);
+  }
+
+  async function register(name: string, email: string, password: string): Promise<{ success: boolean; error?: string }> {
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: { full_name: name },
+      },
+    });
+
+    if (error) return { success: false, error: error.message };
+    return { success: true };
+  }
+
+  if (loading) return null;
 
   return (
     <AuthContext.Provider
