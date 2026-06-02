@@ -47,7 +47,7 @@ export default function RegisterForm() {
     return e;
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setServerError("");
     const e2 = validate();
@@ -55,7 +55,7 @@ export default function RegisterForm() {
       setErrors(e2);
       return;
     }
-    const result = register(fields.name, fields.email, fields.password);
+    const result = await register(fields.name, fields.email, fields.password);
     if (result.success) {
       router.push("/menu");
     } else {
