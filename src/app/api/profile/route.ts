@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
 
   const { data, error } = await supabaseAdmin
     .from("profiles")
-    .select("id, full_name, email, phone, created_at")
+    .select("id, full_name, email, phone, role, created_at")
     .eq("id", auth.user.id)
     .single();
 
@@ -48,7 +48,7 @@ export async function PUT(request: NextRequest) {
     .from("profiles")
     .update(profileUpdate)
     .eq("id", auth.user.id)
-    .select("id, full_name, email, phone, created_at")
+    .select("id, full_name, email, phone, role, created_at")
     .single();
 
   if (error) {

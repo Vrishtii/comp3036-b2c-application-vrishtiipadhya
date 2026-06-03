@@ -11,6 +11,7 @@ const NAV = [
   { label: "orders",          href: "/admin/orders" },
   { label: "menu management", href: "/admin/menu" },
   { label: "customers",       href: "/admin/customers" },
+  { label: "profile",         href: "/admin/profile" },
 ];
 
 export default function AdminShell({ children }: { children: React.ReactNode }) {
