@@ -113,9 +113,6 @@ export default function OrdersClient() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
 
   useEffect(() => {
-    if (!isLoggedIn) { router.replace("/login?redirect=/orders"); return; }
-    if (isAdmin) { router.replace("/admin"); return; }
-
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (!session) { router.replace("/login?redirect=/orders"); return; }
 
@@ -127,7 +124,7 @@ export default function OrdersClient() {
       else setError("failed to load orders");
       setLoading(false);
     });
-  }, [isLoggedIn, isAdmin, router]);
+  }, [router]);
 
   if (!isLoggedIn || isAdmin) return null;
 

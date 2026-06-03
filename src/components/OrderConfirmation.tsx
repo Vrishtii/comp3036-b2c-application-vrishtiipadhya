@@ -37,7 +37,6 @@ export default function OrderConfirmation() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!isLoggedIn) { router.replace("/login"); return; }
     if (!orderNumber) { router.replace("/"); return; }
 
     supabase.auth.getSession().then(async ({ data: { session } }) => {
@@ -50,7 +49,7 @@ export default function OrderConfirmation() {
       if (res.ok) setOrder(await res.json());
       setLoading(false);
     });
-  }, [isLoggedIn, orderNumber, router]);
+  }, [orderNumber, router]);
 
   if (loading) {
     return (

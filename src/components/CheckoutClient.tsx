@@ -281,8 +281,8 @@ export default function CheckoutClient({ pickupDate, pickupTime }: Props) {
 
   useEffect(() => {
     if (!isLoggedIn) router.replace("/login?redirect=/checkout");
-    else if (items.length === 0) router.replace("/cart");
-  }, [isLoggedIn, items, router]);
+    else if (items.length === 0 && !submitting) router.replace("/cart");
+  }, [isLoggedIn, items, submitting, router]);
 
   if (items.length === 0) return null;
 

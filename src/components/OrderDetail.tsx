@@ -73,8 +73,6 @@ export default function OrderDetail({ orderNumber }: { orderNumber: string }) {
   const [notFound, setNotFound] = useState(false);
 
   useEffect(() => {
-    if (!isLoggedIn) { router.replace(`/login?redirect=/orders/${orderNumber}`); return; }
-
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (!session) { router.replace(`/login?redirect=/orders/${orderNumber}`); return; }
 
@@ -86,7 +84,7 @@ export default function OrderDetail({ orderNumber }: { orderNumber: string }) {
       else setNotFound(true);
       setLoading(false);
     });
-  }, [isLoggedIn, orderNumber, router]);
+  }, [orderNumber, router]);
 
   if (!isLoggedIn) return null;
 
