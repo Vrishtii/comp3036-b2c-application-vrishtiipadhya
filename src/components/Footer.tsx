@@ -10,9 +10,9 @@ export default function Footer() {
         </div>
         <div className="flex gap-8 font-inter text-sm tracking-widest uppercase text-ink/60">
           <Link href="/menu" className="hover:text-burgundy transition-colors">Menu</Link>
-          <a href="#" className="hover:text-burgundy transition-colors">About</a>
-          <a href="#" className="hover:text-burgundy transition-colors">Order</a>
-          <a href="#" className="hover:text-burgundy transition-colors">Instagram</a>
+          <span className="text-ink/40 cursor-default">About</span>
+          <Link href="/menu" className="hover:text-burgundy transition-colors">Order</Link>
+          <span className="text-ink/40 cursor-default">Instagram</span>
         </div>
       </div>
       <p className="font-inter text-xs text-ink/40 mt-12">© 2025 crave. all rights reserved.</p>

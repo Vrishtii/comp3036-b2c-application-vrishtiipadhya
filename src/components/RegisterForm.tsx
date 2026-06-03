@@ -76,7 +76,7 @@ export default function RegisterForm() {
     }
     const result = await register(fields.name, fields.email, fields.password, fields.phone.trim() || undefined, preferences.length ? preferences : undefined);
     if (result.success) {
-      window.location.href = "/menu";
+      window.location.href = "/";
     } else {
       setServerError(result.error ?? "something went wrong");
     }

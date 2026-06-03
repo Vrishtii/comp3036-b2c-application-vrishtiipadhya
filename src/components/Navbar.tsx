@@ -22,9 +22,16 @@ export default function Navbar() {
   return (
     <>
       <nav className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-8 md:px-20 py-6 bg-cream/90 backdrop-blur-sm">
-        <Link href="/" className="font-playfair text-2xl text-burgundy">
-          crave.
-        </Link>
+        <div className="flex items-center gap-3">
+          <Link href="/" className="font-playfair text-2xl text-burgundy">
+            crave.
+          </Link>
+          {isLoggedIn && (
+            <span className="font-inter text-xs text-ink/40 normal-case leading-none">
+              hi, {user!.name.split(" ")[0].toLowerCase()}
+            </span>
+          )}
+        </div>
         <div className="flex items-center gap-8 font-inter text-sm tracking-widest uppercase text-ink">
           <Link href="/menu" className="hover:text-burgundy transition-colors">
             Menu
@@ -39,9 +46,6 @@ export default function Navbar() {
           </Link>
           {isLoggedIn ? (
             <div className="flex items-center gap-4">
-              <span className="text-ink/50 normal-case font-inter text-sm">
-                hi, {user!.name.split(" ")[0].toLowerCase()}
-              </span>
               <Link href="/profile" className="hover:text-burgundy transition-colors">
                 Profile
               </Link>
