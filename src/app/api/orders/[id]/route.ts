@@ -7,6 +7,17 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
+const ORDER_SELECT = `
+  *,
+  order_items (
+    id,
+    quantity,
+    price_at_purchase,
+    custom_notes,
+    products ( id, name, image_url )
+  )
+`;
+
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -18,19 +29,12 @@ export async function GET(
 
   const { id } = await params;
 
+  const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id);
+
   const { data, error } = await supabaseAdmin
     .from("orders")
-    .select(`
-      *,
-      order_items (
-        id,
-        quantity,
-        price_at_purchase,
-        custom_notes,
-        products ( id, name, image_url )
-      )
-    `)
-    .eq("id", id)
+    .select(ORDER_SELECT)
+    .eq(isUuid ? "id" : "order_number", id)
     .single();
 
   if (error || !data) {
@@ -45,9 +49,7 @@ export async function GET(
     .eq("id", auth.user.id)
     .single();
 
-  const isAdmin = profile?.role === "admin";
-
-  if (!isOwner && !isAdmin) {
+  if (!isOwner && profile?.role !== "admin") {
     return NextResponse.json({ error: "not found" }, { status: 404 });
   }
 
