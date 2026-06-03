@@ -6,43 +6,24 @@ const supabaseAdmin = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-type AuthSuccess = {
-  user: { id: string; email: string };
-  error?: never;
-  status?: never;
-};
+type AuthSuccess = { ok: true; user: { id: string; email: string } };
+type AuthFailure = { ok: false; error: string; status: number };
+type AdminAuthSuccess = { ok: true; user: { id: string; email: string }; profile: { id: string; role: string } };
 
-type AuthFailure = {
-  error: string;
-  status: number;
-  user?: never;
-};
+export type AuthResult = AuthSuccess | AuthFailure;
+export type AdminAuthResult = AdminAuthSuccess | AuthFailure;
 
-type AdminAuthSuccess = AuthSuccess & {
-  profile: { id: string; role: string };
-};
-
-type AdminAuthFailure = AuthFailure & {
-  profile?: never;
-};
-
-export async function requireAdmin(
-  request: NextRequest
-): Promise<AdminAuthSuccess | AdminAuthFailure> {
+export async function requireAdmin(request: NextRequest): Promise<AdminAuthResult> {
   const authHeader = request.headers.get("authorization");
   if (!authHeader?.startsWith("Bearer ")) {
-    return { error: "unauthorized", status: 401 };
+    return { ok: false, error: "unauthorized", status: 401 };
   }
 
   const token = authHeader.slice(7);
 
-  const {
-    data: { user },
-    error: authError,
-  } = await supabaseAdmin.auth.getUser(token);
-
+  const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
   if (authError || !user) {
-    return { error: "unauthorized", status: 401 };
+    return { ok: false, error: "unauthorized", status: 401 };
   }
 
   const { data: profile, error: profileError } = await supabaseAdmin
@@ -52,34 +33,28 @@ export async function requireAdmin(
     .single();
 
   if (profileError || !profile) {
-    return { error: "forbidden", status: 403 };
+    return { ok: false, error: "forbidden", status: 403 };
   }
 
   if (profile.role !== "admin") {
-    return { error: "forbidden", status: 403 };
+    return { ok: false, error: "forbidden", status: 403 };
   }
 
-  return { user: { id: user.id, email: user.email! }, profile };
+  return { ok: true, user: { id: user.id, email: user.email! }, profile };
 }
 
-export async function requireAuth(
-  request: NextRequest
-): Promise<AuthSuccess | AuthFailure> {
+export async function requireAuth(request: NextRequest): Promise<AuthResult> {
   const authHeader = request.headers.get("authorization");
   if (!authHeader?.startsWith("Bearer ")) {
-    return { error: "unauthorized", status: 401 };
+    return { ok: false, error: "unauthorized", status: 401 };
   }
 
   const token = authHeader.slice(7);
 
-  const {
-    data: { user },
-    error: authError,
-  } = await supabaseAdmin.auth.getUser(token);
-
+  const { data: { user }, error: authError } = await supabaseAdmin.auth.getUser(token);
   if (authError || !user) {
-    return { error: "unauthorized", status: 401 };
+    return { ok: false, error: "unauthorized", status: 401 };
   }
 
-  return { user: { id: user.id, email: user.email! } };
+  return { ok: true, user: { id: user.id, email: user.email! } };
 }

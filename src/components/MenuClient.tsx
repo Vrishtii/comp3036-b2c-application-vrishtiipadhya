@@ -1,27 +1,78 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
-import { products, type Category } from "@/data/products";
+import { useCart } from "@/context/CartContext";
 
-type Filter = "all" | Category;
+interface Product {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  image_url: string | null;
+  categories: { name: string } | null;
+}
+
+type Filter = "all" | "Brownies" | "Cookies" | "Loaves";
 
 const filters: { label: string; value: Filter }[] = [
   { label: "all", value: "all" },
-  { label: "brownies", value: "brownies" },
-  { label: "cookies", value: "cookies" },
-  { label: "loaves", value: "loaves" },
+  { label: "brownies", value: "Brownies" },
+  { label: "cookies", value: "Cookies" },
+  { label: "loaves", value: "Loaves" },
 ];
 
 export default function MenuClient() {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
   const [activeFilter, setActiveFilter] = useState<Filter>("all");
   const [search, setSearch] = useState("");
+  const { addItem } = useCart();
+
+  useEffect(() => {
+    fetch("/api/products")
+      .then((res) => res.json())
+      .then((data) => {
+        if (Array.isArray(data)) setProducts(data);
+        else setError("failed to load products");
+      })
+      .catch(() => setError("failed to load products"))
+      .finally(() => setLoading(false));
+  }, []);
 
   const visible = products.filter((p) => {
-    const matchesCategory = activeFilter === "all" || p.category === activeFilter;
+    const matchesCategory =
+      activeFilter === "all" || p.categories?.name === activeFilter;
     const matchesSearch = p.name.toLowerCase().includes(search.toLowerCase());
     return matchesCategory && matchesSearch;
   });
+
+  if (loading) {
+    return (
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10">
+        {[...Array(6)].map((_, i) => (
+          <div key={i} className="flex flex-col animate-pulse">
+            <div className="aspect-square bg-ink/5 mb-5" />
+            <div className="h-3 bg-ink/5 w-20 mb-3" />
+            <div className="h-5 bg-ink/5 w-3/4 mb-2" />
+            <div className="h-4 bg-ink/5 w-full mb-1" />
+            <div className="h-4 bg-ink/5 w-2/3 mb-8" />
+            <div className="h-10 bg-ink/5 w-full" />
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center py-32 text-center">
+        <p className="font-playfair text-4xl text-ink mb-4">something went wrong.</p>
+        <p className="font-inter text-sm text-ink/50">{error}</p>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -60,18 +111,30 @@ export default function MenuClient() {
                 <div className="aspect-square bg-[#E8E0D0] group-hover:opacity-85 transition-opacity" />
               </Link>
               <p className="font-inter text-xs tracking-widest uppercase text-ink/40 mb-2">
-                {product.category}
+                {product.categories?.name?.toLowerCase() ?? ""}
               </p>
               <div className="flex items-baseline justify-between mb-2">
                 <h3 className="font-playfair text-xl text-ink">{product.name}</h3>
                 <span className="font-inter text-sm text-burgundy font-medium ml-4 shrink-0">
-                  {product.price}
+                  ${Number(product.price).toFixed(2)}
                 </span>
               </div>
               <p className="font-inter text-sm text-ink/55 leading-relaxed mb-8 flex-1">
                 {product.description}
               </p>
-              <button className="border border-burgundy text-burgundy py-3 font-inter text-xs tracking-widest uppercase hover:bg-burgundy hover:text-cream transition-colors">
+              <button
+                onClick={() =>
+                  addItem({
+                    productId: product.id,
+                    name: product.name,
+                    price: `$${Number(product.price).toFixed(2)}`,
+                    priceValue: Number(product.price),
+                    quantity: 1,
+                    customNotes: "",
+                  })
+                }
+                className="border border-burgundy text-burgundy py-3 font-inter text-xs tracking-widest uppercase hover:bg-burgundy hover:text-cream transition-colors"
+              >
                 add to cart
               </button>
             </div>

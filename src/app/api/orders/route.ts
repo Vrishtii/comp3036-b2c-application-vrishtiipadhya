@@ -9,7 +9,7 @@ const supabaseAdmin = createClient(
 
 export async function POST(request: NextRequest) {
   const auth = await requireAuth(request);
-  if (auth.error) {
+  if (!auth.ok) {
     return NextResponse.json({ error: auth.error }, { status: auth.status });
   }
 
@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   const auth = await requireAuth(request);
-  if (auth.error) {
+  if (!auth.ok) {
     return NextResponse.json({ error: auth.error }, { status: auth.status });
   }
 
