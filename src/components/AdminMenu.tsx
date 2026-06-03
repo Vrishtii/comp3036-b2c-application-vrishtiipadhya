@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
 
 interface Category {
@@ -60,6 +61,9 @@ export default function AdminMenu() {
   const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
   const [errors, setErrors] = useState<Partial<Record<keyof FormState, string>>>({});
   const [saving, setSaving] = useState(false);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
 
   useEffect(() => {
     async function load() {
@@ -81,6 +85,8 @@ export default function AdminMenu() {
   function openAdd() {
     setForm({ ...EMPTY_FORM, category_id: categories[0]?.id ?? "" });
     setErrors({});
+    setImageFile(null);
+    setImagePreview(null);
     setModal("add");
   }
 
@@ -95,10 +101,35 @@ export default function AdminMenu() {
     });
     setEditingId(p.id);
     setErrors({});
+    setImageFile(null);
+    setImagePreview(p.image_url);
     setModal("edit");
   }
 
-  function closeModal() { setModal(null); setEditingId(null); }
+  function closeModal() {
+    setModal(null);
+    setEditingId(null);
+    setImageFile(null);
+    setImagePreview(null);
+  }
+
+  function handleImageSelect(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setImageFile(file);
+    setImagePreview(URL.createObjectURL(file));
+  }
+
+  async function uploadImage(file: File): Promise<string | null> {
+    setUploading(true);
+    const ext = file.name.split(".").pop();
+    const filename = `${Date.now()}.${ext}`;
+    const { error } = await supabase.storage.from("product-images").upload(filename, file);
+    setUploading(false);
+    if (error) return null;
+    const { data } = supabase.storage.from("product-images").getPublicUrl(filename);
+    return data.publicUrl;
+  }
 
   function validate() {
     const e: typeof errors = {};
@@ -118,7 +149,12 @@ export default function AdminMenu() {
     const token = await getToken();
     if (!token) { setSaving(false); return; }
 
-    const body = {
+    let image_url: string | null = null;
+    if (imageFile) {
+      image_url = await uploadImage(imageFile);
+    }
+
+    const body: Record<string, unknown> = {
       name: form.name,
       description: form.description,
       price: parseFloat(form.price),
@@ -126,6 +162,7 @@ export default function AdminMenu() {
       is_available: form.is_available,
       is_seasonal: form.is_seasonal,
     };
+    if (image_url) body.image_url = image_url;
 
     const url = modal === "edit" && editingId
       ? `/api/admin/products/${editingId}`
@@ -224,6 +261,9 @@ export default function AdminMenu() {
         {products.map((p) => (
           <div key={p.id} className={`border flex flex-col ${p.is_available ? "border-ink/10" : "border-ink/5 opacity-50"}`}>
             <div className="aspect-square bg-[#E8E0D0] relative">
+              {p.image_url && (
+                <Image src={p.image_url} alt={p.name} fill className="object-cover" />
+              )}
               {p.is_seasonal && (
                 <span className="absolute top-3 left-3 font-inter text-[10px] tracking-widest uppercase bg-burgundy text-cream px-2 py-1">seasonal</span>
               )}
@@ -287,6 +327,27 @@ export default function AdminMenu() {
               </div>
               {field("description", "description", "text", "short description")}
               {field("price", "price", "text", "e.g. 4.50")}
+              <div>
+                <label className="block font-inter text-xs tracking-widest uppercase text-ink/50 mb-2">image</label>
+                {imagePreview ? (
+                  <div className="relative w-full aspect-square mb-2">
+                    <Image src={imagePreview} alt="preview" fill className="object-cover" />
+                    <button
+                      type="button"
+                      onClick={() => { setImageFile(null); setImagePreview(null); }}
+                      className="absolute top-2 right-2 bg-ink text-cream font-inter text-xs px-2 py-1"
+                    >
+                      remove
+                    </button>
+                  </div>
+                ) : (
+                  <label className="w-full h-24 bg-[#E8E0D0] flex items-center justify-center border border-ink/20 cursor-pointer block">
+                    <span className="font-inter text-xs text-ink/40">click to upload image</span>
+                    <input type="file" accept="image/*" onChange={handleImageSelect} className="hidden" />
+                  </label>
+                )}
+                {uploading && <p className="font-inter text-xs text-ink/50 mt-1">uploading...</p>}
+              </div>
               <Toggle checked={form.is_available} onChange={(v) => setForm((f) => ({ ...f, is_available: v }))} label="available on menu" />
               <Toggle checked={form.is_seasonal} onChange={(v) => setForm((f) => ({ ...f, is_seasonal: v }))} label="seasonal item" />
             </div>

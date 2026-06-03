@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useCart } from "@/context/CartContext";
 
 export interface Product {
@@ -54,7 +55,11 @@ export default function ProductDetail({ product, related }: Props) {
       {/* Two column layout */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 mb-28">
         {/* Left: image */}
-        <div className="aspect-square bg-[#E8E0D0]" />
+        <div className="aspect-square bg-[#E8E0D0] relative">
+          {product.image_url && (
+            <Image src={product.image_url} alt={product.name} fill className="object-cover" />
+          )}
+        </div>
 
         {/* Right: details */}
         <div className="flex flex-col justify-center">

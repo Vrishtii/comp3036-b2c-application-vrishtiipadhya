@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useCart } from "@/context/CartContext";
 
 interface Product {
@@ -108,7 +109,11 @@ export default function MenuClient() {
           {visible.map((product) => (
             <div key={product.id} className="flex flex-col">
               <Link href={`/menu/${product.id}`} className="group block mb-5">
-                <div className="aspect-square bg-[#E8E0D0] group-hover:opacity-85 transition-opacity" />
+                <div className="aspect-square bg-[#E8E0D0] relative group-hover:opacity-85 transition-opacity">
+                  {product.image_url && (
+                    <Image src={product.image_url} alt={product.name} fill className="object-cover" />
+                  )}
+                </div>
               </Link>
               <p className="font-inter text-xs tracking-widest uppercase text-ink/40 mb-2">
                 {product.categories?.name?.toLowerCase() ?? ""}
