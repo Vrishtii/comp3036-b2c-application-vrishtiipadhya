@@ -2,8 +2,18 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import type { Product } from "@/data/products";
+import Image from "next/image";
 import { useCart } from "@/context/CartContext";
+
+export interface Product {
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  image_url: string | null;
+  category_id: string;
+  categories: { name: string } | null;
+}
 
 interface Props {
   product: Product;
@@ -16,12 +26,15 @@ export default function ProductDetail({ product, related }: Props) {
   const [added, setAdded] = useState(false);
   const { addItem } = useCart();
 
+  const priceDisplay = `$${Number(product.price).toFixed(2)}`;
+  const categoryName = product.categories?.name?.toLowerCase() ?? "";
+
   function handleAddToCart() {
     addItem({
       productId: product.id,
       name: product.name,
-      price: product.price,
-      priceValue: parseFloat(product.price.replace("$", "")),
+      price: priceDisplay,
+      priceValue: Number(product.price),
       quantity,
       customNotes: notes,
     });
@@ -42,12 +55,16 @@ export default function ProductDetail({ product, related }: Props) {
       {/* Two column layout */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 mb-28">
         {/* Left: image */}
-        <div className="aspect-square bg-[#E8E0D0]" />
+        <div className="aspect-square bg-[#E8E0D0] relative">
+          {product.image_url && (
+            <Image src={product.image_url} alt={product.name} fill className="object-cover" />
+          )}
+        </div>
 
         {/* Right: details */}
         <div className="flex flex-col justify-center">
           <p className="font-inter text-xs tracking-widest uppercase text-ink/40 mb-3">
-            {product.category}
+            {categoryName}
           </p>
           <h1 className="font-playfair text-4xl md:text-5xl text-ink mb-4 leading-tight">
             {product.name}
@@ -55,7 +72,7 @@ export default function ProductDetail({ product, related }: Props) {
           <p className="font-inter text-base text-ink/60 leading-relaxed mb-6">
             {product.description}
           </p>
-          <p className="font-playfair text-3xl text-burgundy mb-8">{product.price}</p>
+          <p className="font-playfair text-3xl text-burgundy mb-8">{priceDisplay}</p>
 
           <hr className="border-ink/10 mb-8" />
 
@@ -107,9 +124,7 @@ export default function ProductDetail({ product, related }: Props) {
           <button
             onClick={handleAddToCart}
             className={`w-full py-4 font-inter text-xs tracking-widest uppercase transition-colors mb-4 ${
-              added
-                ? "bg-ink text-cream"
-                : "bg-burgundy text-cream hover:bg-ink"
+              added ? "bg-ink text-cream" : "bg-burgundy text-cream hover:bg-ink"
             }`}
           >
             {added ? "added to your order!" : "add to cart"}
@@ -131,14 +146,14 @@ export default function ProductDetail({ product, related }: Props) {
               <Link key={p.id} href={`/menu/${p.id}`} className="group flex flex-col">
                 <div className="aspect-square bg-[#E8E0D0] mb-4 group-hover:opacity-85 transition-opacity" />
                 <p className="font-inter text-xs tracking-widest uppercase text-ink/40 mb-2">
-                  {p.category}
+                  {p.categories?.name?.toLowerCase() ?? ""}
                 </p>
                 <div className="flex items-baseline justify-between mb-2">
                   <h3 className="font-playfair text-xl text-ink group-hover:text-burgundy transition-colors">
                     {p.name}
                   </h3>
                   <span className="font-inter text-sm text-burgundy ml-4 shrink-0">
-                    {p.price}
+                    ${Number(p.price).toFixed(2)}
                   </span>
                 </div>
                 <p className="font-inter text-sm text-ink/50 leading-relaxed">{p.description}</p>
