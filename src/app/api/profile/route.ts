@@ -62,3 +62,19 @@ export async function PUT(request: NextRequest) {
 
   return NextResponse.json(data);
 }
+
+export async function DELETE(request: NextRequest) {
+  const auth = await requireAuth(request);
+  if (!auth.ok) {
+    return NextResponse.json({ error: auth.error }, { status: auth.status });
+  }
+
+  await supabaseAdmin.from("profiles").delete().eq("id", auth.user.id);
+
+  const { error } = await supabaseAdmin.auth.admin.deleteUser(auth.user.id);
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  return NextResponse.json({ success: true });
+}

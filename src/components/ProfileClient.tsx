@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
 import PreferencePicker from "@/components/PreferencePicker";
+import DeleteAccountModal from "@/components/DeleteAccountModal";
 
 const supabase = createClient();
 
@@ -70,6 +71,8 @@ export default function ProfileClient() {
   const [savingPrefs, setSavingPrefs] = useState(false);
 
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
@@ -139,6 +142,25 @@ export default function ProfileClient() {
     setSaveSuccess(true);
     setSaving(false);
     setTimeout(() => setSaveSuccess(false), 3000);
+  }
+
+  async function handleDeleteAccount() {
+    setDeleting(true);
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) { router.replace("/login"); return; }
+
+    const res = await fetch("/api/profile", {
+      method: "DELETE",
+      headers: { "Authorization": `Bearer ${session.access_token}` },
+    });
+
+    if (res.ok) {
+      await supabase.auth.signOut();
+      window.location.href = "/login";
+    } else {
+      setDeleting(false);
+      setShowDeleteModal(false);
+    }
   }
 
   async function handlePreferenceChange(newPrefs: string[]) {
@@ -401,6 +423,25 @@ export default function ProfileClient() {
           </div>
         )}
       </section>
+
+      {/* Danger zone */}
+      <section className="mt-20 pt-10 border-t border-ink/10">
+        <p className="font-inter text-xs tracking-widest uppercase text-ink/40 mb-4">danger zone</p>
+        <button
+          onClick={() => setShowDeleteModal(true)}
+          className="font-inter text-xs tracking-widest uppercase text-burgundy border border-burgundy px-6 py-3 hover:bg-burgundy hover:text-cream transition-colors"
+        >
+          delete account
+        </button>
+      </section>
+
+      {showDeleteModal && (
+        <DeleteAccountModal
+          onConfirm={handleDeleteAccount}
+          onCancel={() => setShowDeleteModal(false)}
+          loading={deleting}
+        />
+      )}
     </main>
   );
 }
