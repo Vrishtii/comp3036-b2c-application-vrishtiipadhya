@@ -9,7 +9,7 @@ const supabaseAdmin = createClient(
 
 export async function POST(request: NextRequest) {
   const auth = await requireAdmin(request);
-  if (auth.error) {
+  if (!auth.ok) {
     return NextResponse.json({ error: auth.error }, { status: auth.status });
   }
 
