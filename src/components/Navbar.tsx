@@ -1,15 +1,23 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/context/AuthContext";
 import LogoutModal from "@/components/LogoutModal";
 
 export default function Navbar() {
   const { itemCount } = useCart();
-  const { user, isLoggedIn, isAdmin, logout } = useAuth();
+  const { user, isLoggedIn, isAdmin, authLoading, logout } = useAuth();
+  const router = useRouter();
   const [showLogout, setShowLogout] = useState(false);
+
+  useEffect(() => {
+    if (!authLoading && isAdmin) router.replace("/admin");
+  }, [authLoading, isAdmin, router]);
+
+  if (isAdmin) return null;
 
   return (
     <>
@@ -21,11 +29,6 @@ export default function Navbar() {
           <Link href="/menu" className="hover:text-burgundy transition-colors">
             Menu
           </Link>
-          {isAdmin && (
-            <Link href="/admin" className="hover:text-burgundy transition-colors">
-              Dashboard
-            </Link>
-          )}
           <Link href="/cart" className="relative hover:text-burgundy transition-colors">
             Cart
             {itemCount > 0 && (
@@ -39,6 +42,9 @@ export default function Navbar() {
               <span className="text-ink/50 normal-case font-inter text-sm">
                 hi, {user!.name.split(" ")[0].toLowerCase()}
               </span>
+              <Link href="/profile" className="hover:text-burgundy transition-colors">
+                Profile
+              </Link>
               <button
                 onClick={() => setShowLogout(true)}
                 className="hover:text-burgundy transition-colors"
