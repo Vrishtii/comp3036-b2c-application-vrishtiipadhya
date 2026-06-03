@@ -13,16 +13,17 @@ const NAV = [
 ];
 
 export default function AdminShell({ children }: { children: React.ReactNode }) {
-  const { isLoggedIn, isAdmin, logout } = useAuth();
+  const { isLoggedIn, isAdmin, authLoading, logout } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
 
   useEffect(() => {
+    if (authLoading) return;
     if (!isLoggedIn) router.replace("/login");
     else if (!isAdmin) router.replace("/menu");
-  }, [isLoggedIn, isAdmin, router]);
+  }, [authLoading, isLoggedIn, isAdmin, router]);
 
-  if (!isLoggedIn || !isAdmin) return null;
+  if (authLoading || !isLoggedIn || !isAdmin) return null;
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row">
