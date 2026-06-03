@@ -23,7 +23,7 @@ interface AuthContextValue {
   authLoading: boolean;
   login: (email: string, password: string) => Promise<{ success: boolean; error?: string; role?: string }>;
   logout: () => Promise<void>;
-  register: (name: string, email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  register: (name: string, email: string, password: string, phone?: string, preferences?: string[]) => Promise<{ success: boolean; error?: string }>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -90,7 +90,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     window.location.href = "/login";
   }
 
-  async function register(name: string, email: string, password: string): Promise<{ success: boolean; error?: string }> {
+  async function register(name: string, email: string, password: string, phone?: string, preferences?: string[]): Promise<{ success: boolean; error?: string }> {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -98,6 +98,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
     if (error) return { success: false, error: error.message };
     if (data.user) {
+      const updates: Record<string, unknown> = {};
+      if (phone) updates.phone = phone;
+      if (preferences?.length) updates.preferences = preferences;
+      if (Object.keys(updates).length > 0) {
+        await supabase.from("profiles").update(updates).eq("id", data.user.id);
+      }
       const profile = await fetchProfile(data.user.id);
       setUser(profile);
     }

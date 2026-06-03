@@ -4,6 +4,9 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useCart } from "@/context/CartContext";
+import { createClient } from "@/lib/supabase/client";
+
+const supabase = createClient();
 
 interface Product {
   id: string;
@@ -14,16 +17,64 @@ interface Product {
   categories: { name: string } | null;
 }
 
+function selectFeatured(products: Product[], preferences: string[]): Product[] {
+  if (preferences.length === 0) return products.slice(0, 3);
+
+  const selected: Product[] = [];
+  const usedIds = new Set<string>();
+
+  // One latest product from each preferred category
+  for (const pref of preferences) {
+    if (selected.length >= 3) break;
+    const match = products.find((p) => p.categories?.name === pref && !usedIds.has(p.id));
+    if (match) {
+      selected.push(match);
+      usedIds.add(match.id);
+    }
+  }
+
+  // Fill remaining slots with latest overall
+  for (const product of products) {
+    if (selected.length >= 3) break;
+    if (!usedIds.has(product.id)) {
+      selected.push(product);
+      usedIds.add(product.id);
+    }
+  }
+
+  return selected;
+}
+
 export default function HomeFeatured() {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const { addItem } = useCart();
 
   useEffect(() => {
-    fetch("/api/products?limit=3")
-      .then((res) => res.json())
-      .then((data) => { if (Array.isArray(data)) setProducts(data); })
-      .finally(() => setLoading(false));
+    async function load() {
+      const [productsData, { data: { session } }] = await Promise.all([
+        fetch("/api/products?limit=20").then((r) => r.json()),
+        supabase.auth.getSession(),
+      ]);
+
+      if (!Array.isArray(productsData)) { setLoading(false); return; }
+
+      let prefs: string[] = [];
+      if (session) {
+        const res = await fetch("/api/profile", {
+          headers: { "Authorization": `Bearer ${session.access_token}` },
+        });
+        if (res.ok) {
+          const profile = await res.json();
+          prefs = profile.preferences ?? [];
+        }
+      }
+
+      setProducts(selectFeatured(productsData, prefs));
+      setLoading(false);
+    }
+
+    load();
   }, []);
 
   if (loading) {

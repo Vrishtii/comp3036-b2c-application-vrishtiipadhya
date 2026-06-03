@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { createClient } from "@/lib/supabase/client";
+import PreferencePicker from "@/components/PreferencePicker";
 
 const supabase = createClient();
 
@@ -12,6 +13,7 @@ interface Profile {
   full_name: string;
   email: string;
   phone: string | null;
+  preferences: string[];
 }
 
 interface OrderItem {
@@ -64,6 +66,9 @@ export default function ProfileClient() {
   const [saveError, setSaveError] = useState("");
   const [saveSuccess, setSaveSuccess] = useState(false);
 
+  const [preferences, setPreferences] = useState<string[]>([]);
+  const [savingPrefs, setSavingPrefs] = useState(false);
+
   const [expandedOrder, setExpandedOrder] = useState<string | null>(null);
 
   useEffect(() => {
@@ -81,6 +86,7 @@ export default function ProfileClient() {
         const data: Profile = await profileRes.json();
         setProfile(data);
         setForm({ full_name: data.full_name || "", email: data.email || "", phone: data.phone || "" });
+        setPreferences(data.preferences ?? []);
       }
 
       if (ordersRes.ok) {
@@ -133,6 +139,19 @@ export default function ProfileClient() {
     setSaveSuccess(true);
     setSaving(false);
     setTimeout(() => setSaveSuccess(false), 3000);
+  }
+
+  async function handlePreferenceChange(newPrefs: string[]) {
+    setPreferences(newPrefs);
+    setSavingPrefs(true);
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) { setSavingPrefs(false); return; }
+    await fetch("/api/profile", {
+      method: "PUT",
+      headers: { "Authorization": `Bearer ${session.access_token}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ preferences: newPrefs }),
+    });
+    setSavingPrefs(false);
   }
 
   function handleCancel() {
@@ -266,6 +285,16 @@ export default function ProfileClient() {
         {saveSuccess && (
           <p className="font-inter text-xs text-burgundy mt-3">profile updated successfully.</p>
         )}
+      </section>
+
+      {/* Preferences */}
+      <section className="mb-20">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="font-inter text-xs tracking-widest uppercase text-ink/40">my preferences</h2>
+          {savingPrefs && <span className="font-inter text-xs text-ink/30">saving...</span>}
+        </div>
+        <p className="font-inter text-sm text-ink/50 mb-4">select what you love and we&apos;ll personalise your homepage.</p>
+        <PreferencePicker selected={preferences} onChange={handlePreferenceChange} />
       </section>
 
       {/* Past orders */}

@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
 
   const { data, error } = await supabaseAdmin
     .from("profiles")
-    .select("id, full_name, email, phone, role, created_at")
+    .select("id, full_name, email, phone, role, preferences, created_at")
     .eq("id", auth.user.id)
     .single();
 
@@ -33,12 +33,13 @@ export async function PUT(request: NextRequest) {
   }
 
   const body = await request.json();
-  const { full_name, email, phone } = body;
+  const { full_name, email, phone, preferences } = body;
 
-  const profileUpdate: Record<string, string> = {};
+  const profileUpdate: Record<string, unknown> = {};
   if (full_name !== undefined) profileUpdate.full_name = full_name;
   if (phone !== undefined) profileUpdate.phone = phone;
   if (email !== undefined) profileUpdate.email = email;
+  if (preferences !== undefined) profileUpdate.preferences = preferences;
 
   if (Object.keys(profileUpdate).length === 0) {
     return NextResponse.json({ error: "no fields to update" }, { status: 400 });
@@ -48,7 +49,7 @@ export async function PUT(request: NextRequest) {
     .from("profiles")
     .update(profileUpdate)
     .eq("id", auth.user.id)
-    .select("id, full_name, email, phone, role, created_at")
+    .select("id, full_name, email, phone, role, preferences, created_at")
     .single();
 
   if (error) {
