@@ -21,7 +21,7 @@ interface AuthContextValue {
   isLoggedIn: boolean;
   isAdmin: boolean;
   authLoading: boolean;
-  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  login: (email: string, password: string) => Promise<{ success: boolean; error?: string; role?: string }>;
   logout: () => Promise<void>;
   register: (name: string, email: string, password: string) => Promise<{ success: boolean; error?: string }>;
 }
@@ -73,12 +73,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
-  async function login(email: string, password: string): Promise<{ success: boolean; error?: string }> {
+  async function login(email: string, password: string): Promise<{ success: boolean; error?: string; role?: string }> {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) return { success: false, error: error.message };
     if (data.user) {
       const profile = await fetchProfile(data.user.id);
       setUser(profile);
+      return { success: true, role: profile?.role };
     }
     return { success: true };
   }

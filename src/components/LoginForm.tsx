@@ -25,7 +25,7 @@ export default function LoginForm({ redirectTo }: { redirectTo: string }) {
     try {
       const result = await login(email, password);
       if (result.success) {
-        window.location.href = redirectTo;
+        window.location.href = result.role === "admin" ? "/admin" : redirectTo;
       } else {
         setError(result.error ?? "something went wrong");
         setLoading(false);
