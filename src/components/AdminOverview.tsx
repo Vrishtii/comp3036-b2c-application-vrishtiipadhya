@@ -2,7 +2,9 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { useOrder, type OrderStatus } from "@/context/OrderContext";
+import { createClient } from "@/lib/supabase/client";
+
+type OrderStatus = "pending" | "confirmed" | "ready" | "completed";
 
 const STATUS_STYLES: Record<OrderStatus, string> = {
   pending:   "bg-ink/10 text-ink/50",
@@ -10,6 +12,22 @@ const STATUS_STYLES: Record<OrderStatus, string> = {
   ready:     "bg-green-100 text-green-700",
   completed: "bg-burgundy/10 text-burgundy",
 };
+
+interface OrderItem {
+  id: string;
+  quantity: number;
+  products: { name: string } | null;
+}
+
+interface Order {
+  id: string;
+  order_number: string;
+  status: OrderStatus;
+  total_amount: number;
+  created_at: string;
+  profiles: { full_name: string } | null;
+  order_items: OrderItem[];
+}
 
 function StatCard({ label, value, highlight = false }: { label: string; value: string | number; highlight?: boolean }) {
   return (
@@ -20,30 +38,47 @@ function StatCard({ label, value, highlight = false }: { label: string; value: s
   );
 }
 
+const supabase = createClient();
+
 export default function AdminOverview() {
-  const { orders } = useOrder();
+  const [orders, setOrders] = useState<Order[]>([]);
   const [customerCount, setCustomerCount] = useState(0);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    try {
-      const users = JSON.parse(localStorage.getItem("crave_users") || "[]");
-      setCustomerCount(users.length);
-    } catch { setCustomerCount(0); }
+    supabase.auth.getSession().then(async ({ data: { session } }) => {
+      if (!session) return;
+
+      const headers = { Authorization: `Bearer ${session.access_token}` };
+
+      const [ordersRes, customersRes] = await Promise.all([
+        fetch("/api/admin/orders", { headers }),
+        fetch("/api/admin/customers", { headers }),
+      ]);
+
+      if (ordersRes.ok) setOrders(await ordersRes.json());
+      if (customersRes.ok) {
+        const customers = await customersRes.json();
+        setCustomerCount(customers.length);
+      }
+      setLoading(false);
+    });
   }, []);
 
   const today = new Date().toDateString();
-  const todayOrders = orders.filter((o) => new Date(o.placedAt).toDateString() === today);
+  const todayOrders = orders.filter((o) => new Date(o.created_at).toDateString() === today);
   const pendingOrders = orders.filter((o) => o.status === "pending");
-  const todayRevenue = todayOrders.reduce((sum, o) => sum + o.subtotal, 0);
+  const todayRevenue = todayOrders.reduce((sum, o) => sum + Number(o.total_amount), 0);
 
   const recentOrders = [...orders]
-    .sort((a, b) => new Date(b.placedAt).getTime() - new Date(a.placedAt).getTime())
+    .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
     .slice(0, 5);
 
   const itemCounts = orders
-    .flatMap((o) => o.items)
+    .flatMap((o) => o.order_items)
     .reduce<Record<string, number>>((acc, item) => {
-      acc[item.name] = (acc[item.name] ?? 0) + item.quantity;
+      const name = item.products?.name ?? "unknown";
+      acc[name] = (acc[name] ?? 0) + item.quantity;
       return acc;
     }, {});
 
@@ -51,11 +86,23 @@ export default function AdminOverview() {
     .sort(([, a], [, b]) => b - a)
     .slice(0, 5);
 
+  if (loading) {
+    return (
+      <div>
+        <h1 className="font-playfair text-5xl text-ink mb-12">overview.</h1>
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-16">
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="border border-ink/10 p-6 animate-pulse h-24" />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div>
       <h1 className="font-playfair text-5xl text-ink mb-12">overview.</h1>
 
-      {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-16">
         <StatCard label="orders today"    value={todayOrders.length} />
         <StatCard label="pending orders"  value={pendingOrders.length} highlight />
@@ -64,7 +111,6 @@ export default function AdminOverview() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
-        {/* Recent orders */}
         <div>
           <div className="flex items-center justify-between mb-6">
             <h2 className="font-playfair text-2xl text-ink">recent orders.</h2>
@@ -77,17 +123,17 @@ export default function AdminOverview() {
           ) : (
             <div className="flex flex-col gap-3">
               {recentOrders.map((order) => (
-                <div key={order.orderNumber} className="flex items-center justify-between border border-ink/10 px-5 py-4 gap-4">
+                <div key={order.id} className="flex items-center justify-between border border-ink/10 px-5 py-4 gap-4">
                   <div>
-                    <p className="font-inter text-sm text-ink">{order.orderNumber}</p>
-                    <p className="font-inter text-xs text-ink/40">{order.customerName}</p>
+                    <p className="font-inter text-sm text-ink">{order.order_number}</p>
+                    <p className="font-inter text-xs text-ink/40">{order.profiles?.full_name ?? "—"}</p>
                   </div>
                   <div className="flex items-center gap-4">
-                    <p className="font-inter text-sm text-ink">${order.subtotal.toFixed(2)}</p>
+                    <p className="font-inter text-sm text-ink">${Number(order.total_amount).toFixed(2)}</p>
                     <span className={`font-inter text-xs tracking-widest uppercase px-2 py-1 rounded-full ${STATUS_STYLES[order.status]}`}>
                       {order.status}
                     </span>
-                    <Link href={`/admin/orders`} className="font-inter text-xs text-burgundy hover:text-ink transition-colors">
+                    <Link href="/admin/orders" className="font-inter text-xs text-burgundy hover:text-ink transition-colors">
                       view
                     </Link>
                   </div>
@@ -97,7 +143,6 @@ export default function AdminOverview() {
           )}
         </div>
 
-        {/* Popular items */}
         <div>
           <h2 className="font-playfair text-2xl text-ink mb-6">popular items.</h2>
           {popularItems.length === 0 ? (
