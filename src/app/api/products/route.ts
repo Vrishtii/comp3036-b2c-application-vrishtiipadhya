@@ -11,10 +11,13 @@ export async function GET(request: NextRequest) {
   const category = searchParams.get("category");
   const search = searchParams.get("search");
 
+  const limit = searchParams.get("limit");
+
   let query = supabase
     .from("products")
     .select("*, categories(name)")
-    .eq("is_available", true);
+    .eq("is_available", true)
+    .order("created_at", { ascending: false });
 
   if (category) {
     query = query.ilike("categories.name", category);
@@ -22,6 +25,10 @@ export async function GET(request: NextRequest) {
 
   if (search) {
     query = query.or(`name.ilike.%${search}%,description.ilike.%${search}%`);
+  }
+
+  if (limit) {
+    query = query.limit(Number(limit));
   }
 
   const { data, error } = await query;

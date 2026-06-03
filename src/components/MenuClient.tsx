@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { useSearchParams } from "next/navigation";
 import { useCart } from "@/context/CartContext";
 
 interface Product {
@@ -24,10 +25,16 @@ const filters: { label: string; value: Filter }[] = [
 ];
 
 export default function MenuClient() {
+  const searchParams = useSearchParams();
+  const categoryParam = searchParams.get("category") as Filter | null;
+  const validFilters: Filter[] = ["Brownies", "Cookies", "Loaves"];
+
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [activeFilter, setActiveFilter] = useState<Filter>("all");
+  const [activeFilter, setActiveFilter] = useState<Filter>(
+    categoryParam && validFilters.includes(categoryParam) ? categoryParam : "all"
+  );
   const [search, setSearch] = useState("");
   const { addItem } = useCart();
 
