@@ -129,11 +129,11 @@ function DetailsStep({
     onNext();
   }
 
-  function field(id: keyof CustomerDetails, label: string, type = "text", placeholder = "") {
+  function field(id: keyof CustomerDetails, label: string, type = "text", placeholder = "", required = false) {
     return (
       <div>
         <label htmlFor={id} className="block font-inter text-xs tracking-widest uppercase text-ink/50 mb-2">
-          {label}
+          {label}{required && <span className="text-burgundy ml-0.5">*</span>}
         </label>
         <input
           id={id} type={type} value={details[id]}
@@ -150,9 +150,9 @@ function DetailsStep({
     <div>
       <h2 className="font-playfair text-3xl text-ink mb-8">your details.</h2>
       <div className="flex flex-col gap-6 mb-10">
-        {field("name", "full name", "text", "Jane Smith")}
-        {field("email", "email", "email", "jane@example.com")}
-        {field("phone", "phone number", "tel", "+61 400 000 000")}
+        {field("name", "full name", "text", "Jane Smith", true)}
+        {field("email", "email", "email", "jane@example.com", true)}
+        {field("phone", "phone number", "tel", "+61 400 000 000", true)}
         <div>
           <label htmlFor="notes" className="block font-inter text-xs tracking-widest uppercase text-ink/50 mb-2">
             additional notes <span className="normal-case">(optional)</span>

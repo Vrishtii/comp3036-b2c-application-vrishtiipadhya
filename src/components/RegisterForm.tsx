@@ -13,6 +13,10 @@ interface Fields {
 
 interface Errors extends Partial<Fields> {}
 
+function Required() {
+  return <span className="text-burgundy ml-0.5">*</span>;
+}
+
 export default function RegisterForm() {
   const { register } = useAuth();
 
@@ -27,7 +31,15 @@ export default function RegisterForm() {
 
   function update(key: keyof Fields, value: string) {
     setFields((prev) => ({ ...prev, [key]: value }));
-    if (errors[key]) setErrors((prev) => ({ ...prev, [key]: undefined }));
+    if (key === "confirm") {
+      if (value && value !== fields.password) {
+        setErrors((prev) => ({ ...prev, confirm: "passwords do not match" }));
+      } else {
+        setErrors((prev) => ({ ...prev, confirm: undefined }));
+      }
+    } else if (errors[key]) {
+      setErrors((prev) => ({ ...prev, [key]: undefined }));
+    }
   }
 
   function validate(): Errors {
@@ -67,6 +79,13 @@ export default function RegisterForm() {
     }`;
   }
 
+  const fieldConfig = [
+    { id: "name",     label: "full name",        type: "text",     placeholder: "Jane Smith" },
+    { id: "email",    label: "email",             type: "email",    placeholder: "jane@example.com" },
+    { id: "password", label: "password",          type: "password", placeholder: "min. 8 characters" },
+    { id: "confirm",  label: "confirm password",  type: "password", placeholder: "••••••••" },
+  ] as const;
+
   return (
     <div className="w-full max-w-md border border-ink/10 p-10">
       <h1 className="font-playfair text-4xl text-ink mb-2">create an account.</h1>
@@ -75,20 +94,13 @@ export default function RegisterForm() {
       </p>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-5">
-        {(
-          [
-            { id: "name", label: "full name", type: "text", placeholder: "Jane Smith" },
-            { id: "email", label: "email", type: "email", placeholder: "jane@example.com" },
-            { id: "password", label: "password", type: "password", placeholder: "min. 8 characters" },
-            { id: "confirm", label: "confirm password", type: "password", placeholder: "••••••••" },
-          ] as const
-        ).map(({ id, label, type, placeholder }) => (
+        {fieldConfig.map(({ id, label, type, placeholder }) => (
           <div key={id}>
             <label
               htmlFor={id}
               className="block font-inter text-xs tracking-widest uppercase text-ink/50 mb-2"
             >
-              {label}
+              {label}<Required />
             </label>
             <input
               id={id}

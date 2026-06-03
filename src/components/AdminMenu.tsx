@@ -201,11 +201,11 @@ export default function AdminMenu() {
     }
   }
 
-  function field(key: keyof FormState, label: string, type = "text", placeholder = "") {
+  function field(key: keyof FormState, label: string, type = "text", placeholder = "", required = false) {
     const value = form[key];
     return (
       <div>
-        <label className="block font-inter text-xs tracking-widest uppercase text-ink/50 mb-2">{label}</label>
+        <label className="block font-inter text-xs tracking-widest uppercase text-ink/50 mb-2">{label}{required && <span className="text-burgundy ml-0.5">*</span>}</label>
         {key === "description" ? (
           <textarea
             value={value as string}
@@ -313,9 +313,9 @@ export default function AdminMenu() {
               {modal === "add" ? "add product." : "edit product."}
             </h2>
             <div className="flex flex-col gap-5 mb-6">
-              {field("name", "product name", "text", "e.g. Dark Chocolate Brownie")}
+              {field("name", "product name", "text", "e.g. Dark Chocolate Brownie", true)}
               <div>
-                <label className="block font-inter text-xs tracking-widest uppercase text-ink/50 mb-2">category</label>
+                <label className="block font-inter text-xs tracking-widest uppercase text-ink/50 mb-2">category<span className="text-burgundy ml-0.5">*</span></label>
                 <select
                   value={form.category_id}
                   onChange={(e) => setForm((f) => ({ ...f, category_id: e.target.value }))}
@@ -325,8 +325,8 @@ export default function AdminMenu() {
                 </select>
                 {errors.category_id && <p className="font-inter text-xs text-burgundy mt-1">{errors.category_id}</p>}
               </div>
-              {field("description", "description", "text", "short description")}
-              {field("price", "price", "text", "e.g. 4.50")}
+              {field("description", "description", "text", "short description", true)}
+              {field("price", "price", "text", "e.g. 4.50", true)}
               <div>
                 <label className="block font-inter text-xs tracking-widest uppercase text-ink/50 mb-2">image</label>
                 {imagePreview ? (

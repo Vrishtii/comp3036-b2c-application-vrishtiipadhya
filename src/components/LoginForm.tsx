@@ -46,7 +46,7 @@ export default function LoginForm({ redirectTo }: { redirectTo: string }) {
       <form onSubmit={handleSubmit} className="flex flex-col gap-5">
         <div>
           <label htmlFor="email" className="block font-inter text-xs tracking-widest uppercase text-ink/50 mb-2">
-            email
+            email<span className="text-burgundy ml-0.5">*</span>
           </label>
           <input
             id="email"
@@ -60,7 +60,7 @@ export default function LoginForm({ redirectTo }: { redirectTo: string }) {
 
         <div>
           <label htmlFor="password" className="block font-inter text-xs tracking-widest uppercase text-ink/50 mb-2">
-            password
+            password<span className="text-burgundy ml-0.5">*</span>
           </label>
           <input
             id="password"
