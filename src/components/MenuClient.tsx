@@ -111,7 +111,7 @@ export default function MenuClient() {
               <Link href={`/menu/${product.id}`} className="group block mb-5">
                 <div className="aspect-square bg-[#E8E0D0] relative group-hover:opacity-85 transition-opacity">
                   {product.image_url && (
-                    <Image src={product.image_url} alt={product.name} fill className="object-cover" />
+                    <Image src={product.image_url} alt={product.name} fill sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw" className="object-cover" />
                   )}
                 </div>
               </Link>

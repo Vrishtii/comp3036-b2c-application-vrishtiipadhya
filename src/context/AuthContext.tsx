@@ -86,6 +86,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   async function logout(): Promise<void> {
     await supabase.auth.signOut();
     setUser(null);
+    window.location.href = "/login";
   }
 
   async function register(name: string, email: string, password: string): Promise<{ success: boolean; error?: string }> {

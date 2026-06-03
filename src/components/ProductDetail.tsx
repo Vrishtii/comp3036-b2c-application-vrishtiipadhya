@@ -57,7 +57,7 @@ export default function ProductDetail({ product, related }: Props) {
         {/* Left: image */}
         <div className="aspect-square bg-[#E8E0D0] relative">
           {product.image_url && (
-            <Image src={product.image_url} alt={product.name} fill className="object-cover" />
+            <Image src={product.image_url} alt={product.name} fill sizes="(max-width: 1024px) 100vw, 50vw" className="object-cover" priority />
           )}
         </div>
 

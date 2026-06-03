@@ -262,7 +262,7 @@ export default function AdminMenu() {
           <div key={p.id} className={`border flex flex-col ${p.is_available ? "border-ink/10" : "border-ink/5 opacity-50"}`}>
             <div className="aspect-square bg-[#E8E0D0] relative">
               {p.image_url && (
-                <Image src={p.image_url} alt={p.name} fill className="object-cover" />
+                <Image src={p.image_url} alt={p.name} fill sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw" className="object-cover" />
               )}
               {p.is_seasonal && (
                 <span className="absolute top-3 left-3 font-inter text-[10px] tracking-widest uppercase bg-burgundy text-cream px-2 py-1">seasonal</span>
@@ -331,7 +331,7 @@ export default function AdminMenu() {
                 <label className="block font-inter text-xs tracking-widest uppercase text-ink/50 mb-2">image</label>
                 {imagePreview ? (
                   <div className="relative w-full aspect-square mb-2">
-                    <Image src={imagePreview} alt="preview" fill className="object-cover" />
+                    <Image src={imagePreview} alt="preview" fill sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw" className="object-cover" />
                     <button
                       type="button"
                       onClick={() => { setImageFile(null); setImagePreview(null); }}
