@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import LogoutModal from "@/components/LogoutModal";
 
 const NAV = [
   { label: "overview",        href: "/admin" },
@@ -16,6 +17,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
   const { isLoggedIn, isAdmin, authLoading, logout } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
+  const [showLogout, setShowLogout] = useState(false);
 
   useEffect(() => {
     if (authLoading) return;
@@ -51,7 +53,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
           })}
         </nav>
         <button
-          onClick={() => void logout()}
+          onClick={() => setShowLogout(true)}
           className="font-inter text-xs tracking-widest uppercase text-ink/30 hover:text-burgundy transition-colors text-left py-3 px-4"
         >
           logout
@@ -80,6 +82,13 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
       <main className="flex-1 px-8 md:px-12 py-10 md:py-16 pb-24 md:pb-16">
         {children}
       </main>
+
+      {showLogout && (
+        <LogoutModal
+          onConfirm={() => { setShowLogout(false); void logout(); }}
+          onCancel={() => setShowLogout(false)}
+        />
+      )}
     </div>
   );
 }
