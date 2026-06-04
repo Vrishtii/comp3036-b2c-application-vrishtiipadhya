@@ -74,6 +74,13 @@ export default function ProfileClient() {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
+  const [showChangePw, setShowChangePw] = useState(false);
+  const [pwForm, setPwForm] = useState({ current: "", newPw: "", confirm: "" });
+  const [pwErrors, setPwErrors] = useState<{ current?: string; newPw?: string; confirm?: string }>({});
+  const [pwSaving, setPwSaving] = useState(false);
+  const [pwSuccess, setPwSuccess] = useState(false);
+  const [pwError, setPwError] = useState("");
+
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
       if (!session) { router.replace("/login"); return; }
@@ -142,6 +149,47 @@ export default function ProfileClient() {
     setSaveSuccess(true);
     setSaving(false);
     setTimeout(() => setSaveSuccess(false), 3000);
+  }
+
+  async function handleChangePassword() {
+    const errs: typeof pwErrors = {};
+    if (!pwForm.current) errs.current = "current password is required";
+    if (!pwForm.newPw) errs.newPw = "new password is required";
+    else if (pwForm.newPw.length < 8) errs.newPw = "password must be at least 8 characters";
+    if (!pwForm.confirm) errs.confirm = "please confirm your new password";
+    else if (pwForm.confirm !== pwForm.newPw) errs.confirm = "passwords do not match";
+    if (Object.keys(errs).length > 0) { setPwErrors(errs); return; }
+
+    setPwSaving(true);
+    setPwError("");
+    setPwSuccess(false);
+
+    // Verify current password
+    const { error: signInError } = await supabase.auth.signInWithPassword({
+      email: profile!.email,
+      password: pwForm.current,
+    });
+
+    if (signInError) {
+      setPwErrors({ current: "current password is incorrect" });
+      setPwSaving(false);
+      return;
+    }
+
+    const { error: updateError } = await supabase.auth.updateUser({ password: pwForm.newPw });
+
+    if (updateError) {
+      setPwError(updateError.message);
+      setPwSaving(false);
+      return;
+    }
+
+    setPwForm({ current: "", newPw: "", confirm: "" });
+    setPwErrors({});
+    setPwSaving(false);
+    setPwSuccess(true);
+    setShowChangePw(false);
+    setTimeout(() => setPwSuccess(false), 3000);
   }
 
   async function handleDeleteAccount() {
@@ -420,6 +468,72 @@ export default function ProfileClient() {
                 </div>
               );
             })}
+          </div>
+        )}
+      </section>
+
+      {/* Change password */}
+      <section className="mb-20">
+        <button
+          onClick={() => { setShowChangePw((v) => !v); setPwErrors({}); setPwError(""); }}
+          className="flex items-center gap-3 font-inter text-xs tracking-widest uppercase text-ink/40 hover:text-ink transition-colors"
+        >
+          <span>change password</span>
+          <span className="text-ink/30">{showChangePw ? "▲" : "▼"}</span>
+        </button>
+
+        {pwSuccess && <p className="font-inter text-xs text-burgundy mt-3">password updated successfully.</p>}
+
+        {showChangePw && (
+          <div className="mt-6 border border-ink/10 p-8 flex flex-col gap-5">
+            {[
+              { id: "current", label: "current password",  placeholder: "••••••••" },
+              { id: "newPw",   label: "new password",      placeholder: "min. 8 characters" },
+              { id: "confirm", label: "confirm password",  placeholder: "••••••••" },
+            ].map(({ id, label, placeholder }) => (
+              <div key={id}>
+                <label className="block font-inter text-xs tracking-widest uppercase text-ink/50 mb-2">
+                  {label}<span className="text-burgundy ml-0.5">*</span>
+                </label>
+                <input
+                  type="password"
+                  value={pwForm[id as keyof typeof pwForm]}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setPwForm((p) => ({ ...p, [id]: val }));
+                    if (id === "confirm") {
+                      if (val && val !== pwForm.newPw) setPwErrors((p) => ({ ...p, confirm: "passwords do not match" }));
+                      else setPwErrors((p) => ({ ...p, confirm: undefined }));
+                    } else {
+                      setPwErrors((p) => ({ ...p, [id]: undefined }));
+                    }
+                  }}
+                  placeholder={placeholder}
+                  className="w-full bg-transparent border border-ink/20 px-4 py-3 font-inter text-sm text-ink placeholder-ink/30 focus:outline-none focus:border-burgundy transition-colors"
+                />
+                {pwErrors[id as keyof typeof pwErrors] && (
+                  <p className="font-inter text-xs text-burgundy mt-1">{pwErrors[id as keyof typeof pwErrors]}</p>
+                )}
+              </div>
+            ))}
+
+            {pwError && <p className="font-inter text-xs text-burgundy">{pwError}</p>}
+
+            <div className="flex gap-4 pt-1">
+              <button
+                onClick={() => { setShowChangePw(false); setPwForm({ current: "", newPw: "", confirm: "" }); setPwErrors({}); setPwError(""); }}
+                className="px-8 py-3 border border-ink/20 font-inter text-xs tracking-widest uppercase text-ink/50 hover:border-ink hover:text-ink transition-colors"
+              >
+                cancel
+              </button>
+              <button
+                onClick={handleChangePassword}
+                disabled={pwSaving}
+                className="px-8 py-3 bg-burgundy text-cream font-inter text-xs tracking-widest uppercase hover:bg-ink transition-colors disabled:opacity-50"
+              >
+                {pwSaving ? "saving..." : "update password"}
+              </button>
+            </div>
           </div>
         )}
       </section>

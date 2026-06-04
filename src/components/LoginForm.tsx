@@ -59,9 +59,14 @@ export default function LoginForm({ redirectTo }: { redirectTo: string }) {
         </div>
 
         <div>
-          <label htmlFor="password" className="block font-inter text-xs tracking-widest uppercase text-ink/50 mb-2">
-            password<span className="text-burgundy ml-0.5">*</span>
-          </label>
+          <div className="flex items-center justify-between mb-2">
+            <label htmlFor="password" className="font-inter text-xs tracking-widest uppercase text-ink/50">
+              password<span className="text-burgundy ml-0.5">*</span>
+            </label>
+            <Link href="/forgot-password" className="font-inter text-xs text-ink/40 hover:text-burgundy transition-colors normal-case">
+              forgot password?
+            </Link>
+          </div>
           <input
             id="password"
             type="password"
