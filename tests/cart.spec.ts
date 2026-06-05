@@ -25,6 +25,6 @@ test.describe("cart page", () => {
     await page.waitForSelector("button:has-text('add to cart')", { timeout: 10000 });
     await page.locator("button:has-text('add to cart')").first().click();
     await page.locator("nav a[href='/cart']").click();
-    await expect(page.getByRole("link", { name: /checkout/i })).toBeVisible();
+    await expect(page.getByRole("button", { name: /proceed to checkout/i })).toBeVisible();
   });
 });
