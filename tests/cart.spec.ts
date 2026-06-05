@@ -15,7 +15,8 @@ test.describe("cart page", () => {
     await page.goto("/menu");
     await page.waitForSelector("button:has-text('add to cart')", { timeout: 10000 });
     await page.locator("button:has-text('add to cart')").first().click();
-    await page.goto("/cart");
+    // Use client-side nav to preserve in-memory cart state
+    await page.locator("nav a[href='/cart']").click();
     await expect(page.getByText("nothing here yet.")).not.toBeVisible();
   });
 
@@ -23,7 +24,7 @@ test.describe("cart page", () => {
     await page.goto("/menu");
     await page.waitForSelector("button:has-text('add to cart')", { timeout: 10000 });
     await page.locator("button:has-text('add to cart')").first().click();
-    await page.goto("/cart");
+    await page.locator("nav a[href='/cart']").click();
     await expect(page.getByRole("link", { name: /checkout/i })).toBeVisible();
   });
 });

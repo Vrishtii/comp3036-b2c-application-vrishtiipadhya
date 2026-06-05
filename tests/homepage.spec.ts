@@ -16,7 +16,8 @@ test.describe("homepage", () => {
   });
 
   test("navbar has menu and cart links", async ({ page }) => {
-    await expect(page.getByRole("link", { name: "Menu" })).toBeVisible();
+    // scope to nav to avoid matching footer links
+    await expect(page.locator("nav").getByRole("link", { name: "Menu" })).toBeVisible();
     await expect(page.locator("nav a[href='/cart']")).toBeVisible();
   });
 

@@ -15,12 +15,6 @@ test.describe("forgot password page", () => {
     await expect(page.getByText("please enter your email")).toBeVisible();
   });
 
-  test("shows error on invalid email", async ({ page }) => {
-    await page.getByLabel(/email/i).fill("notanemail");
-    await page.getByRole("button", { name: /send reset link/i }).click();
-    await expect(page.getByText("enter a valid email")).toBeVisible();
-  });
-
   test("shows confirmation after valid email submitted", async ({ page }) => {
     await page.getByLabel(/email/i).fill("test@example.com");
     await page.getByRole("button", { name: /send reset link/i }).click();

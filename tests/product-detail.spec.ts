@@ -2,7 +2,6 @@ import { test, expect } from "@playwright/test";
 
 test.describe("product detail page", () => {
   test.beforeEach(async ({ page }) => {
-    // Navigate to menu and click first product
     await page.goto("/menu");
     await page.waitForSelector("a[href^='/menu/']", { timeout: 10000 });
     await page.locator("a[href^='/menu/']").first().click();
@@ -19,17 +18,20 @@ test.describe("product detail page", () => {
   });
 
   test("quantity selector is visible and works", async ({ page }) => {
+    const qty = page.locator(".border-x.border-ink\\/20");
     await expect(page.getByLabel("increase quantity")).toBeVisible();
     await expect(page.getByLabel("decrease quantity")).toBeVisible();
+    await expect(qty).toHaveText("1");
     await page.getByLabel("increase quantity").click();
-    await expect(page.getByText("2")).toBeVisible();
+    await expect(qty).toHaveText("2");
     await page.getByLabel("decrease quantity").click();
-    await expect(page.getByText("1")).toBeVisible();
+    await expect(qty).toHaveText("1");
   });
 
   test("quantity cannot go below 1", async ({ page }) => {
+    const qty = page.locator(".border-x.border-ink\\/20");
     await page.getByLabel("decrease quantity").click();
-    await expect(page.getByText("1")).toBeVisible();
+    await expect(qty).toHaveText("1");
   });
 
   test("custom notes input is visible", async ({ page }) => {
