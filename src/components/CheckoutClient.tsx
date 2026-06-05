@@ -187,7 +187,14 @@ function PaymentStep({
         <label htmlFor={id} className="block font-inter text-xs tracking-widest uppercase text-ink/50 mb-2">{label}</label>
         <input
           id={id} type="text" inputMode="numeric" value={details[id]}
-          onChange={(e) => onChange({ ...details, [id]: e.target.value })}
+          onChange={(e) => {
+            let val = e.target.value;
+            if (id === "expiry") {
+              val = val.replace(/\D/g, "").slice(0, 4);
+              if (val.length >= 3) val = val.slice(0, 2) + "/" + val.slice(2);
+            }
+            onChange({ ...details, [id]: val });
+          }}
           placeholder={placeholder} maxLength={maxLength}
           className="w-full bg-transparent border border-ink/20 px-4 py-3 font-inter text-sm text-ink placeholder-ink/30 focus:outline-none focus:border-burgundy transition-colors tracking-widest"
         />

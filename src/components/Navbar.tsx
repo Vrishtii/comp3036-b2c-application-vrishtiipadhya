@@ -27,7 +27,7 @@ export default function Navbar() {
             crave.
           </Link>
           {isLoggedIn && (
-            <span className="font-inter text-xs text-ink/40 normal-case leading-none">
+            <span className="hidden sm:inline font-inter text-xs text-ink/40 normal-case leading-none">
               hi, {user!.name.split(" ")[0].toLowerCase()}
             </span>
           )}
