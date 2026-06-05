@@ -38,11 +38,19 @@ interface Order {
 }
 
 const STATUS_LABEL: Record<string, string> = {
-  pending: "pending",
+  pending:   "pending",
   confirmed: "confirmed",
-  ready: "ready for pickup",
+  ready:     "ready for pickup",
   completed: "completed",
   cancelled: "cancelled",
+};
+
+const STATUS_STYLES: Record<string, string> = {
+  pending:   "text-ink/50 border-ink/20",
+  confirmed: "text-ink border-ink/50",
+  ready:     "text-burgundy border-burgundy bg-burgundy/5",
+  completed: "text-ink/30 border-ink/10",
+  cancelled: "text-burgundy/50 border-burgundy/20",
 };
 
 function formatDate(iso: string) {
@@ -390,7 +398,7 @@ export default function ProfileClient() {
                     <div className="flex flex-wrap items-center gap-6">
                       <span className="font-playfair text-lg text-ink">{order.order_number}</span>
                       <span className="font-inter text-xs text-ink/40">{formatDate(order.created_at)}</span>
-                      <span className="font-inter text-xs tracking-widest uppercase text-ink/50 border border-ink/20 px-2 py-0.5">
+                      <span className={`font-inter text-xs tracking-widest uppercase border px-2 py-0.5 ${STATUS_STYLES[order.status] ?? "text-ink/50 border-ink/20"}`}>
                         {STATUS_LABEL[order.status] ?? order.status}
                       </span>
                     </div>
