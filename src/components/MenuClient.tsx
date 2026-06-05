@@ -3,6 +3,7 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
+import { useSearchParams } from "next/navigation";
 import { useCart } from "@/context/CartContext";
 
 interface Product {
@@ -24,10 +25,16 @@ const filters: { label: string; value: Filter }[] = [
 ];
 
 export default function MenuClient() {
+  const searchParams = useSearchParams();
+  const categoryParam = searchParams.get("category") as Filter | null;
+  const validFilters: Filter[] = ["Brownies", "Cookies", "Loaves"];
+
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-  const [activeFilter, setActiveFilter] = useState<Filter>("all");
+  const [activeFilter, setActiveFilter] = useState<Filter>(
+    categoryParam && validFilters.includes(categoryParam) ? categoryParam : "all"
+  );
   const [search, setSearch] = useState("");
   const { addItem } = useCart();
 
@@ -106,12 +113,12 @@ export default function MenuClient() {
       {/* Grid */}
       {visible.length > 0 ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10">
-          {visible.map((product) => (
+          {visible.map((product, index) => (
             <div key={product.id} className="flex flex-col">
               <Link href={`/menu/${product.id}`} className="group block mb-5">
                 <div className="aspect-square bg-[#E8E0D0] relative group-hover:opacity-85 transition-opacity">
                   {product.image_url && (
-                    <Image src={product.image_url} alt={product.name} fill className="object-cover" />
+                    <Image src={product.image_url} alt={product.name} fill sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw" className="object-cover" priority={index === 0} />
                   )}
                 </div>
               </Link>

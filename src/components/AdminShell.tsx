@@ -1,28 +1,32 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
+import LogoutModal from "@/components/LogoutModal";
 
 const NAV = [
   { label: "overview",        href: "/admin" },
   { label: "orders",          href: "/admin/orders" },
   { label: "menu management", href: "/admin/menu" },
   { label: "customers",       href: "/admin/customers" },
+  { label: "profile",         href: "/admin/profile" },
 ];
 
 export default function AdminShell({ children }: { children: React.ReactNode }) {
-  const { isLoggedIn, isAdmin, logout } = useAuth();
+  const { isLoggedIn, isAdmin, authLoading, logout } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
+  const [showLogout, setShowLogout] = useState(false);
 
   useEffect(() => {
+    if (authLoading) return;
     if (!isLoggedIn) router.replace("/login");
     else if (!isAdmin) router.replace("/menu");
-  }, [isLoggedIn, isAdmin, router]);
+  }, [authLoading, isLoggedIn, isAdmin, router]);
 
-  if (!isLoggedIn || !isAdmin) return null;
+  if (authLoading || !isLoggedIn || !isAdmin) return null;
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row">
@@ -50,7 +54,7 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
           })}
         </nav>
         <button
-          onClick={() => void logout()}
+          onClick={() => setShowLogout(true)}
           className="font-inter text-xs tracking-widest uppercase text-ink/30 hover:text-burgundy transition-colors text-left py-3 px-4"
         >
           logout
@@ -79,6 +83,13 @@ export default function AdminShell({ children }: { children: React.ReactNode }) 
       <main className="flex-1 px-8 md:px-12 py-10 md:py-16 pb-24 md:pb-16">
         {children}
       </main>
+
+      {showLogout && (
+        <LogoutModal
+          onConfirm={() => { setShowLogout(false); void logout(); }}
+          onCancel={() => setShowLogout(false)}
+        />
+      )}
     </div>
   );
 }

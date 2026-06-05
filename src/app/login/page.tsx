@@ -12,7 +12,7 @@ interface Props {
 }
 
 export default async function LoginPage({ searchParams }: Props) {
-  const { redirect = "/menu" } = await searchParams;
+  const { redirect = "/" } = await searchParams;
 
   return (
     <>

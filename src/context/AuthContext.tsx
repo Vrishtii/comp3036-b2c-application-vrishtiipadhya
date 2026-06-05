@@ -20,9 +20,10 @@ interface AuthContextValue {
   user: User | null;
   isLoggedIn: boolean;
   isAdmin: boolean;
-  login: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  authLoading: boolean;
+  login: (email: string, password: string) => Promise<{ success: boolean; error?: string; role?: string }>;
   logout: () => Promise<void>;
-  register: (name: string, email: string, password: string) => Promise<{ success: boolean; error?: string }>;
+  register: (name: string, email: string, password: string, phone?: string, preferences?: string[]) => Promise<{ success: boolean; error?: string }>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -52,6 +53,7 @@ async function fetchProfile(userId: string): Promise<User | null> {
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
+  const [authLoading, setAuthLoading] = useState(true);
 
   useEffect(() => {
     supabase.auth.getSession().then(async ({ data: { session } }) => {
@@ -59,6 +61,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const profile = await fetchProfile(session.user.id);
         setUser(profile);
       }
+      setAuthLoading(false);
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
@@ -70,12 +73,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
-  async function login(email: string, password: string): Promise<{ success: boolean; error?: string }> {
+  async function login(email: string, password: string): Promise<{ success: boolean; error?: string; role?: string }> {
     const { data, error } = await supabase.auth.signInWithPassword({ email, password });
     if (error) return { success: false, error: error.message };
     if (data.user) {
       const profile = await fetchProfile(data.user.id);
       setUser(profile);
+      return { success: true, role: profile?.role };
     }
     return { success: true };
   }
@@ -83,9 +87,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   async function logout(): Promise<void> {
     await supabase.auth.signOut();
     setUser(null);
+    window.location.href = "/login";
   }
 
-  async function register(name: string, email: string, password: string): Promise<{ success: boolean; error?: string }> {
+  async function register(name: string, email: string, password: string, phone?: string, preferences?: string[]): Promise<{ success: boolean; error?: string }> {
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -93,6 +98,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     });
     if (error) return { success: false, error: error.message };
     if (data.user) {
+      const updates: Record<string, unknown> = {};
+      if (phone) updates.phone = phone;
+      if (preferences?.length) updates.preferences = preferences;
+      if (Object.keys(updates).length > 0) {
+        await supabase.from("profiles").update(updates).eq("id", data.user.id);
+      }
       const profile = await fetchProfile(data.user.id);
       setUser(profile);
     }
@@ -105,6 +116,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         user,
         isLoggedIn: !!user,
         isAdmin: user?.role === "admin",
+        authLoading,
         login,
         logout,
         register,
