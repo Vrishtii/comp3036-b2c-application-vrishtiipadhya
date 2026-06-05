@@ -27,7 +27,7 @@ export default function LoginForm({ redirectTo }: { redirectTo: string }) {
       if (result.success) {
         window.location.href = result.role === "admin" ? "/admin" : redirectTo;
       } else {
-        setError(result.error ?? "something went wrong");
+        setError("invalid email or password");
         setLoading(false);
       }
     } catch {

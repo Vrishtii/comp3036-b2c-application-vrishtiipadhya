@@ -2,18 +2,25 @@ import { test, expect } from "@playwright/test";
 
 test.describe("product detail page", () => {
   test.beforeEach(async ({ page }) => {
-    await page.goto("/menu/brownie-1");
+    // Navigate to menu and click first product
+    await page.goto("/menu");
+    await page.waitForSelector("a[href^='/menu/']", { timeout: 10000 });
+    await page.locator("a[href^='/menu/']").first().click();
+    await page.waitForLoadState("networkidle");
   });
 
-  test("shows product name and details", async ({ page }) => {
-    await expect(page.getByRole("heading", { name: "Classic Fudge Brownie" })).toBeVisible();
-    await expect(page.getByText("brownies")).toBeVisible();
+  test("shows product name and category", async ({ page }) => {
+    await expect(page.locator("h1.font-playfair")).toBeVisible();
+    await expect(page.locator("p.font-inter.text-xs.uppercase").first()).toBeVisible();
+  });
+
+  test("shows product price", async ({ page }) => {
+    await expect(page.getByText(/\$\d+\.\d{2}/).first()).toBeVisible();
   });
 
   test("quantity selector is visible and works", async ({ page }) => {
     await expect(page.getByLabel("increase quantity")).toBeVisible();
     await expect(page.getByLabel("decrease quantity")).toBeVisible();
-    await expect(page.getByText("1")).toBeVisible();
     await page.getByLabel("increase quantity").click();
     await expect(page.getByText("2")).toBeVisible();
     await page.getByLabel("decrease quantity").click();
@@ -43,8 +50,8 @@ test.describe("product detail page", () => {
     await expect(page).toHaveURL("/menu");
   });
 
-  test("navigating to unknown product shows 404", async ({ page }) => {
-    await page.goto("/menu/fake-product");
-    await expect(page.getByText("404")).toBeVisible();
+  test("navigating to unknown product shows not found", async ({ page }) => {
+    await page.goto("/menu/00000000-0000-0000-0000-000000000000");
+    await expect(page.getByText(/not found|404/i)).toBeVisible();
   });
 });

@@ -7,8 +7,12 @@ test.describe("login page", () => {
 
   test("shows login form fields", async ({ page }) => {
     await expect(page.getByLabel(/email/i)).toBeVisible();
-    await expect(page.getByLabel(/password/i)).toBeVisible();
+    await expect(page.getByLabel(/^password/i)).toBeVisible();
     await expect(page.getByRole("button", { name: /sign in/i })).toBeVisible();
+  });
+
+  test("shows forgot password link below password field", async ({ page }) => {
+    await expect(page.getByRole("link", { name: /forgot password/i })).toBeVisible();
   });
 
   test("shows error on empty submit", async ({ page }) => {
@@ -18,19 +22,23 @@ test.describe("login page", () => {
 
   test("shows error on wrong credentials", async ({ page }) => {
     await page.getByLabel(/email/i).fill("wrong@example.com");
-    await page.getByLabel(/password/i).fill("wrongpassword");
+    await page.getByLabel(/^password/i).fill("wrongpassword");
     await page.getByRole("button", { name: /sign in/i }).click();
     await expect(page.getByText("invalid email or password")).toBeVisible();
   });
 
-  test("successful login with admin credentials redirects", async ({ page }) => {
-    await page.getByLabel(/email/i).fill("admin@crave.com");
-    await page.getByLabel(/password/i).fill("admin123");
+  test("successful login with admin credentials redirects to admin", async ({ page }) => {
+    await page.getByLabel(/email/i).fill(process.env.TEST_ADMIN_EMAIL!);
+    await page.getByLabel(/^password/i).fill(process.env.TEST_ADMIN_PASSWORD!);
     await page.getByRole("button", { name: /sign in/i }).click();
-    await expect(page).not.toHaveURL("/login");
+    await expect(page).toHaveURL("/admin", { timeout: 10000 });
   });
 
   test("has link to register page", async ({ page }) => {
-    await expect(page.getByRole("link", { name: /register|sign up/i })).toBeVisible();
+    await expect(page.getByRole("link", { name: /register/i })).toBeVisible();
+  });
+
+  test("has continue as guest link", async ({ page }) => {
+    await expect(page.getByRole("link", { name: /continue as guest/i })).toBeVisible();
   });
 });
