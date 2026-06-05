@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import OrderConfirmation from "@/components/OrderConfirmation";
@@ -12,7 +13,9 @@ export default function OrderConfirmationPage() {
   return (
     <>
       <Navbar />
-      <OrderConfirmation />
+      <Suspense>
+        <OrderConfirmation />
+      </Suspense>
       <Footer />
     </>
   );

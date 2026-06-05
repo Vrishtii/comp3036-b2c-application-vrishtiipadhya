@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 import MenuClient from "@/components/MenuClient";
@@ -22,7 +23,9 @@ export default function MenuPage() {
           </p>
         </div>
 
-        <MenuClient />
+        <Suspense>
+          <MenuClient />
+        </Suspense>
       </main>
 
       <Footer />
